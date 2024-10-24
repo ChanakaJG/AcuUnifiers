@@ -32,18 +32,27 @@ namespace AcuUnifiers
         public abstract class acctCD : PX.Data.BQL.BqlString.Field<acctCD> { }
 
         /// <inheritdoc cref="Vendor.AcctCD"/>
-        [VendorRaw(BqlField = typeof(Vendor.acctCD))]
+        [VendorRaw(DisplayName = "Merging Vendor", BqlField = typeof(Vendor.acctCD))]
         public string AcctCD { get; set; }
         #endregion
+
+
 
         #region VendorLocationID
         public abstract class vendorLocationID : PX.Data.BQL.BqlInt.Field<vendorLocationID> { }
         [LocationActive(typeof(Where<Location.bAccountID, Equal<Current<CDVendorLocationDetail.bAccountID>>,
-            And<MatchWithBranch<Location.vBranchID>>>), DescriptionField = typeof(Location.descr), Visibility = PXUIVisibility.SelectorVisible, Enabled = true)]
+            And<MatchWithBranch<Location.vBranchID>>>), DisplayName = "Merging Vendor Location", DescriptionField = typeof(Location.descr), Visibility = PXUIVisibility.SelectorVisible, Enabled = true)]
         [PXDefault(typeof(SearchFor<Location.locationID>.
             In<SelectFrom<Location>.Where<Location.bAccountID.IsEqual<CDVendorLocationDetail.bAccountID.FromCurrent>
                 .And<Location.isActive.IsEqual<True>.And<Location.isDefault.IsEqual<True>>>>>))]
         public virtual int? VendorLocationID { get; set; }
+        #endregion
+
+        #region AcctName
+        public abstract class acctName : PX.Data.BQL.BqlString.Field<acctName> { }
+        [PXDBString(255, IsUnicode = true, BqlField = typeof(Vendor.acctName))]
+        [PXUIField(DisplayName = "Merging Vendor Name", Visibility = PXUIVisibility.SelectorVisible)]
+        public string AcctName { get; set; }
         #endregion
 
         #region VendorClassID

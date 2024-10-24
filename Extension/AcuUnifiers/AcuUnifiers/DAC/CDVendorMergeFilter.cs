@@ -7,6 +7,7 @@ using PX.Data.BQL.Fluent;
 
 namespace AcuUnifiers
 {
+
     [PXCacheName("Vendor Merge Filter")]
     public class CDVendorMergeFilter : PXBqlTable, IBqlTable
     {
@@ -38,6 +39,24 @@ namespace AcuUnifiers
         [PXSelector(typeof(VendorClass.vendorClassID), DescriptionField = typeof(VendorClass.descr), CacheGlobal = true)]
         [PXUIField(DisplayName = "Vendor Class")]
         public virtual String VendorClassID { get; set; }
+        #endregion
+
+        #region MergingOption
+        public abstract class mergingOption : PX.Data.BQL.BqlString.Field<mergingOption> { }
+        [PXDBString(2, IsFixed = true, IsUnicode = true)]
+        [PXStringList(new string[] { Constants.MergingOptionValueAllTransactions, Constants.MergingOptionValueOpenTransactions},
+                      new string[] { Messages.MergingOptionLabelAllTransactions, Messages.MergingOptionLabelOpenTransactions})]
+        [PXUIField(DisplayName = "Merging Option", Required = true)]
+        [PXDefault(Constants.MergingOptionValueAllTransactions)]
+        public virtual string MergingOption { get; set; }
+        #endregion
+
+        #region UpdateGLAccounts
+        public abstract class updateGLAccounts : PX.Data.BQL.BqlBool.Field<updateGLAccounts> { }
+        [PXDBBool()]
+        [PXUIField(DisplayName = "Update GL Accounts", Required = true)]
+        [PXDefault(false)]
+        public virtual bool? UpdateGLAccounts { get; set; }
         #endregion
     }
 }
