@@ -58,8 +58,10 @@
     <Compile Include="DAC\CDVendorLocationDetail.cs" />
     <Compile Include="DAC\CDVendorMergeFilter.cs" />
     <Compile Include="GraphExtension\CDAPInvoiceEntryExt.cs" />
+    <Compile Include="GraphExtension\CDAPPaymentEntryExt.cs" />
     <Compile Include="GraphExtension\CDPOOrderEntryExt.cs" />
     <Compile Include="Descriptor\Messages.cs" />
+    <Compile Include="GraphExtension\CDPOReceiptEntryExt.cs" />
     <Compile Include="Graph\MergeVendor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
