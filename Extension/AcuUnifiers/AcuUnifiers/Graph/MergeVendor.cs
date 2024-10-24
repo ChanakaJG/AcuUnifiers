@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using PX.Data;
@@ -29,7 +30,6 @@ namespace AcuUnifiers
             VendorsToBeMerged.SetProcessCaption("Merge Vendors");
         }
         #endregion
-
 
         #region Actions
         public PXAction<CDVendorMergeFilter> viewVendor;
@@ -100,7 +100,6 @@ namespace AcuUnifiers
 
         #endregion
 
-
         #region Private Methods
         private void ExecuteMergeVendors(List<CDVendorLocationDetail> list, CDVendorMergeFilter filter)
         {
@@ -110,6 +109,7 @@ namespace AcuUnifiers
             }
 
             POOrderEntry poOrderEntry = PXGraph.CreateInstance<POOrderEntry>();
+            APInvoiceEntry apInvoiceEntry = PXGraph.CreateInstance<APInvoiceEntry>();
 
             using (new MergeVendorScope())
             {
@@ -141,10 +141,21 @@ namespace AcuUnifiers
 
                     // Update AP Bills
 
+                    var apInvoices = SelectFrom<APInvoice>
+                                   .Where<APInvoice.vendorID.IsEqual<@P.AsInt>
+                                       .And<APInvoice.vendorLocationID.IsEqual<@P.AsInt>>>.View.Select(this, vendorDetail.BAccountID, vendorDetail.VendorLocationID);
+
+                    foreach (APInvoice apInvoice in apInvoices)
+                    {
+                        UpdateAPInvoice(apInvoice, apInvoiceEntry, filter);
+                    }
+
+
                     // Update APPayments
                 }
             }
         }
+
         private void UpdatePOOrders(POOrder poOrder, POOrderEntry poOrderEntry, CDVendorMergeFilter filter)
         {
             poOrderEntry.Clear();
@@ -158,6 +169,18 @@ namespace AcuUnifiers
             poOrderEntry.Save.Press();
         }
 
+        private void UpdateAPInvoice(APInvoice apInvoice, APInvoiceEntry apInvoiceEntry, CDVendorMergeFilter filter, bool updateClosed = false, bool updateAcccounts = false)
+        {
+            apInvoiceEntry.Clear();
+            apInvoiceEntry.Document.Current = apInvoice;
+
+            apInvoiceEntry.Document.Cache.SetValueExt<APInvoice.vendorID>(apInvoiceEntry.Document.Current, filter.VendorID);
+            apInvoiceEntry.Document.Cache.SetValueExt<APInvoice.vendorLocationID>(apInvoiceEntry.Document.Current, filter.VendorLocationID);
+            apInvoiceEntry.Document.UpdateCurrent();
+
+            apInvoiceEntry.Save.Press();
+
+        }
 
         #endregion
     }
