@@ -4,7 +4,7 @@
 <asp:Content ID="cont1" ContentPlaceHolderID="phDS" Runat="Server">
 	<px:PXDataSource ID="ds" runat="server" Visible="True" Width="100%"
         TypeName="AcuUnifiers.MergeVendor"
-        PrimaryView="MasterView"
+        PrimaryView="CDVendorMergeFilter"
         >
 		<CallbackCommands>
 
@@ -12,23 +12,28 @@
 	</px:PXDataSource>
 </asp:Content>
 <asp:Content ID="cont2" ContentPlaceHolderID="phF" Runat="Server">
-	<px:PXFormView ID="form" runat="server" DataSourceID="ds" DataMember="MasterView" Width="100%" Height="100px" AllowAutoHide="false">
+	<px:PXFormView ID="form" runat="server" DataSourceID="ds" DataMember="CDVendorMergeFilter" Width="100%" Height="" AllowAutoHide="false">
 		<Template>
-			<px:PXLayoutRule ID="PXLayoutRule1" runat="server" StartRow="True"/>
-		</Template>
+			<px:PXLayoutRule runat="server" StartRow="True" ID="PXLayoutRule1" ></px:PXLayoutRule>
+			<px:PXLayoutRule runat="server" StartGroup="True" GroupCaption="Merge To" ID="CstPXLayoutRule5" ></px:PXLayoutRule>
+			<px:PXSegmentMask runat="server" DataField="VendorID" CommitChanges="True" ID="CstPXSegmentMask1" ></px:PXSegmentMask>
+			<px:PXSegmentMask runat="server" DataField="VendorLocationID" AutoRefresh="True" CommitChanges="True" ID="CstPXSegmentMask2" ></px:PXSegmentMask>
+			<px:PXDropDown CommitChanges="True" runat="server" ID="CstPXDropDown1" DataField="MergingOption" ></px:PXDropDown>
+			<px:PXCheckBox CommitChanges="True" runat="server" ID="CstPXCheckBox2" DataField="UpdateGLAccounts" ></px:PXCheckBox>
+			<px:PXLayoutRule runat="server" StartGroup="True" StartColumn="True" GroupCaption="Filter Merging Vendors" ID="CstPXLayoutRule6" ></px:PXLayoutRule>
+			<px:PXSelector runat="server" DataField="VendorClassID" CommitChanges="True" ID="CstPXSelector4" ></px:PXSelector></Template>
 	</px:PXFormView>
 </asp:Content>
 <asp:Content ID="cont3" ContentPlaceHolderID="phG" Runat="Server">
-	<px:PXGrid ID="grid" runat="server" DataSourceID="ds" Width="100%" Height="150px" SkinID="Details" AllowAutoHide="false">
+	<px:PXGrid runat="server" SyncPosition="True" Height="150px" SkinID="PrimaryInquire" Width="100%" ID="grid" AllowAutoHide="false" DataSourceID="ds" AllowPaging="true" AdjustPageSize="Auto" AllowSearch="true">
+		<AutoSize Enabled="True" Container="Window" MinHeight="150" />
 		<Levels>
-			<px:PXGridLevel DataMember="DetailsView">
-			    <Columns>
-			        
-			    </Columns>
-			</px:PXGridLevel>
-		</Levels>
-		<AutoSize Container="Window" Enabled="True" MinHeight="150" />
-		<ActionBar >
-		</ActionBar>
-	</px:PXGrid>
-</asp:Content>
+			<px:PXGridLevel DataMember="VendorsToBeMerged">
+				<RowTemplate>
+					<px:PXSegmentMask runat="server" DataField="VendorLocationID" AutoRefresh="True" ID="CstPXSegmentMask3" ></px:PXSegmentMask></RowTemplate>
+				<Columns>
+					<px:PXGridColumn Type="CheckBox" DataField="Selected" Width="60" AllowCheckAll="True" ></px:PXGridColumn>
+					<px:PXGridColumn DataField="AcctCD" Width="140" LinkCommand="ViewVendor" ></px:PXGridColumn>
+					<px:PXGridColumn DataField="AcctName" Width="280" />
+					<px:PXGridColumn DataField="VendorLocationID" Width="70" LinkCommand="ViewVendorLocation" ></px:PXGridColumn>
+					<px:PXGridColumn DataField="VendorClassID" Width="120" ></px:PXGridColumn></Columns></px:PXGridLevel></Levels></px:PXGrid></asp:Content>

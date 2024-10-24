@@ -97,6 +97,7 @@ namespace AcuUnifiers
             }
 
         }
+
         #endregion
 
 
@@ -105,7 +106,7 @@ namespace AcuUnifiers
         {
             if (filter.VendorID == null || filter.VendorLocationID == null)
             {
-                throw new PXException("Vendor and Vendor Location should be defined");
+                throw new PXException("Vendor, Vendor Location and Merging Option should be defined");
             }
 
             POOrderEntry poOrderEntry = PXGraph.CreateInstance<POOrderEntry>();
