@@ -4,11 +4,14 @@ using PX.Data;
 using PX.Data.BQL;
 using PX.Data.BQL.Fluent;
 using PX.Objects.AP;
-
+using PX.Objects.Common.Scopes;
 using PX.Objects.CR;
+using PX.Objects.PO;
 
 namespace AcuUnifiers
 {
+    public class MergeVendorScope : FlaggedModeScopeBase<MergeVendorScope> { }
+
     public class MergeVendor : PXGraph<MergeVendor>
     {
         #region Views
@@ -100,9 +103,61 @@ namespace AcuUnifiers
         #region Private Methods
         private void ExecuteMergeVendors(List<CDVendorLocationDetail> list, CDVendorMergeFilter filter)
         {
-        
-        }
-        #endregion
+            if (filter.VendorID == null || filter.VendorLocationID == null)
+            {
+                throw new PXException("Vendor and Vendor Location should be defined");
+            }
 
+            POOrderEntry poOrderEntry = PXGraph.CreateInstance<POOrderEntry>();
+
+            using (new MergeVendorScope())
+            {
+                foreach (CDVendorLocationDetail vendorDetail in list)
+                {
+                    if (vendorDetail.VendorLocationID == null)
+                    {
+                        PXProcessing<CDVendorLocationDetail>.SetWarning("Vendor Location should be defined");
+                        continue;
+                    }
+                    if (vendorDetail.VendorLocationID == filter.VendorLocationID)
+                    {
+                        PXProcessing<CDVendorLocationDetail>.SetWarning("Can not merge to same location");
+                        continue;
+                    }
+
+                    //Update POOrders
+                    var poOrders = SelectFrom<POOrder>
+                                    .Where<POOrder.vendorID.IsEqual<@P.AsInt>
+                                        .And<POOrder.vendorLocationID.IsEqual<@P.AsInt>>>.View.Select(this, vendorDetail.BAccountID, vendorDetail.VendorLocationID);
+
+                    foreach (POOrder poOrder in poOrders)
+                    {
+                        UpdatePOOrders(poOrder, poOrderEntry, filter);
+                    }
+
+
+                    // Update Purchase Receipts
+
+                    // Update AP Bills
+
+                    // Update APPayments
+                }
+            }
+        }
+        private void UpdatePOOrders(POOrder poOrder, POOrderEntry poOrderEntry, CDVendorMergeFilter filter)
+        {
+            poOrderEntry.Clear();
+            var vendorRef = poOrder.VendorRefNbr;
+            poOrderEntry.Document.Current = poOrder;
+
+            poOrderEntry.Document.Cache.SetValueExt<POOrder.vendorID>(poOrderEntry.Document.Current, filter.VendorID);
+            poOrderEntry.Document.Cache.SetValueExt<POOrder.vendorLocationID>(poOrderEntry.Document.Current, filter.VendorLocationID);
+            poOrderEntry.Document.UpdateCurrent();
+            poOrderEntry.Document.Cache.SetValue<POOrder.vendorRefNbr>(poOrderEntry.Document.Current, vendorRef);
+            poOrderEntry.Save.Press();
+        }
+
+
+        #endregion
     }
 }
