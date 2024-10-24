@@ -55,6 +55,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DAC\CDVendorLocationDetail.cs" />
+    <Compile Include="DAC\CDVendorMergeFilter.cs" />
     <Compile Include="Graph\MergeVendor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -67,7 +69,6 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="DAC\" />
     <Folder Include="GraphExtension\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
