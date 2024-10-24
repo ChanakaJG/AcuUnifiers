@@ -1,6 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using PX.Data;
 using PX.Data.BQL;
 using PX.Data.BQL.Fluent;
@@ -8,6 +5,9 @@ using PX.Objects.AP;
 using PX.Objects.Common.Scopes;
 using PX.Objects.CR;
 using PX.Objects.PO;
+using System;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace AcuUnifiers
 {
@@ -103,7 +103,7 @@ namespace AcuUnifiers
         #region Private Methods
         private void ExecuteMergeVendors(List<CDVendorLocationDetail> list, CDVendorMergeFilter filter)
         {
-            if (filter.VendorID == null || filter.VendorLocationID == null)
+            if (filter.VendorID == null || filter.VendorLocationID == null || filter.MergingOption == null)
             {
                 throw new PXException(Messages.FilterValidationMsg);
             }
@@ -115,63 +115,113 @@ namespace AcuUnifiers
 
             using (new MergeVendorScope())
             {
-                foreach (CDVendorLocationDetail vendorDetail in list)
+                if (filter.MergingOption == Constants.MergingOptionValueAllTransactions)
                 {
-                    if (vendorDetail.VendorLocationID == null)
+                    foreach (CDVendorLocationDetail vendorDetail in list)
                     {
-                        PXProcessing<CDVendorLocationDetail>.SetWarning("Vendor Location should be defined");
-                        continue;
+                        if (vendorDetail.VendorLocationID == null)
+                        {
+                            PXProcessing<CDVendorLocationDetail>.SetWarning("Vendor Location should be defined");
+                            continue;
+                        }
+                        if (vendorDetail.VendorLocationID == filter.VendorLocationID)
+                        {
+                            PXProcessing<CDVendorLocationDetail>.SetWarning("Can not merge to same location");
+                            continue;
+                        }
+
+                        using (var tx = new PXTransactionScope())
+                        {
+                            try
+                            {
+                                //Update POOrders
+                                var poOrders = SelectFrom<POOrder>
+                                                .Where<POOrder.vendorID.IsEqual<@P.AsInt>
+                                                    .And<POOrder.vendorLocationID.IsEqual<@P.AsInt>>>.View.Select(this, vendorDetail.BAccountID, vendorDetail.VendorLocationID);
+
+                                foreach (POOrder poOrder in poOrders)
+                                {
+                                    UpdatePOOrders(poOrder, poOrderEntry, filter);
+                                }
+
+
+                                // Update Purchase Receipts
+                                var poReceipts = SelectFrom<POReceipt>
+                                                    .Where<POReceipt.vendorID.IsEqual<@P.AsInt>
+                                                        .And<POReceipt.vendorLocationID.IsEqual<@P.AsInt>>>.View.Select(this, vendorDetail.BAccountID, vendorDetail.VendorLocationID);
+
+                                foreach (var poReceipt in poReceipts)
+                                {
+                                    UpdatePOReceipts(poReceipt, purchaseReceiptsEntry, filter);
+                                }
+
+                                // Update AP Bills
+
+                                var apInvoices = SelectFrom<APInvoice>
+                                               .Where<APInvoice.vendorID.IsEqual<@P.AsInt>
+                                                   .And<APInvoice.vendorLocationID.IsEqual<@P.AsInt>>>.View.Select(this, vendorDetail.BAccountID, vendorDetail.VendorLocationID);
+
+                                foreach (APInvoice apInvoice in apInvoices)
+                                {
+                                    UpdateAPInvoice(apInvoice, apInvoiceEntry, filter);
+                                }
+
+                                // Update APPayments
+                                var apPayments = SelectFrom<APPayment>
+                                                    .Where<APPayment.vendorID.IsEqual<@P.AsInt>
+                                                        .And<APPayment.vendorLocationID.IsEqual<@P.AsInt>>>.View.Select(this, vendorDetail.BAccountID, vendorDetail.VendorLocationID);
+
+                                foreach (APPayment apPayment in apPayments)
+                                {
+                                    UpdateAPPayment(apPayment, apPaymentEntry, filter);
+                                }
+
+                                UpdateVendorStatus(vendorDetail);
+
+                                tx.Complete();
+                            }
+                            catch (Exception ex)
+                            {
+                                PXProcessing<CDVendorLocationDetail>.SetError(ex);
+                            }
+                        }
                     }
-                    if (vendorDetail.VendorLocationID == filter.VendorLocationID)
+                }
+                else
+                {
+                    foreach (CDVendorLocationDetail vendorDetail in list)
                     {
-                        PXProcessing<CDVendorLocationDetail>.SetWarning("Can not merge to same location");
-                        continue;
-                    }
+                        if (vendorDetail.VendorLocationID == null)
+                        {
+                            PXProcessing<CDVendorLocationDetail>.SetWarning("Vendor Location should be defined");
+                            continue;
+                        }
+                        if (vendorDetail.VendorLocationID == filter.VendorLocationID)
+                        {
+                            PXProcessing<CDVendorLocationDetail>.SetWarning("Can not merge to same location");
+                            continue;
+                        }
 
-                    //Update POOrders
-                    var poOrders = SelectFrom<POOrder>
-                                    .Where<POOrder.vendorID.IsEqual<@P.AsInt>
-                                        .And<POOrder.vendorLocationID.IsEqual<@P.AsInt>>>.View.Select(this, vendorDetail.BAccountID, vendorDetail.VendorLocationID);
+                        using (var tx = new PXTransactionScope())
+                        {
 
-                    foreach (POOrder poOrder in poOrders)
-                    {
-                        UpdatePOOrders(poOrder, poOrderEntry, filter);
-                    }
-
-
-                    // Update Purchase Receipts
-                    var poReceipts = SelectFrom<POReceipt>
-                                        .Where<POReceipt.vendorID.IsEqual<@P.AsInt>
-                                            .And<POReceipt.vendorLocationID.IsEqual<@P.AsInt>>>.View.Select(this, vendorDetail.BAccountID, vendorDetail.VendorLocationID);
-
-                    foreach (var poReceipt in poReceipts)
-                    {
-                        UpdatePOReceipts(poReceipt, purchaseReceiptsEntry, filter);
-                    }
-
-                    // Update AP Bills
-
-                    var apInvoices = SelectFrom<APInvoice>
-                                   .Where<APInvoice.vendorID.IsEqual<@P.AsInt>
-                                       .And<APInvoice.vendorLocationID.IsEqual<@P.AsInt>>>.View.Select(this, vendorDetail.BAccountID, vendorDetail.VendorLocationID);
-
-                    foreach (APInvoice apInvoice in apInvoices)
-                    {
-                        UpdateAPInvoice(apInvoice, apInvoiceEntry, filter);
-                    }
-
-                    // Update APPayments
-                    var apPayments = SelectFrom<APPayment>
-                                        .Where<APPayment.vendorID.IsEqual<@P.AsInt>
-                                            .And<APPayment.vendorLocationID.IsEqual<@P.AsInt>>>.View.Select(this, vendorDetail.BAccountID, vendorDetail.VendorLocationID);
-
-                    foreach (APPayment apPayment in apPayments)
-                    {
-                        UpdateAPPayment(apPayment, apPaymentEntry, filter);
+                        }
                     }
                 }
                 ReCalculatevendorBalances(list, filter);
             }
+        }
+
+        private void UpdateVendorStatus(CDVendorLocationDetail vendorDetail)
+        {
+            VendorMaint vendorMaint = PXGraph.CreateInstance<VendorMaint>();
+
+            vendorMaint.Clear();
+            vendorMaint.BAccount.Current = vendorMaint.BAccount.Search<VendorR.bAccountID>(vendorDetail.BAccountID);
+            vendorMaint.BAccount.Current.VStatus = VendorStatus.Inactive;
+            vendorMaint.BAccount.UpdateCurrent();
+            vendorMaint.Actions.PressSave();
+
         }
 
         private void UpdatePOOrders(POOrder poOrder, POOrderEntry poOrderEntry, CDVendorMergeFilter filter)
