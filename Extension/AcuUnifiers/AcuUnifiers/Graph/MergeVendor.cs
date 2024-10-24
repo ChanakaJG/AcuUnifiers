@@ -109,6 +109,7 @@ namespace AcuUnifiers
 
             POOrderEntry poOrderEntry = PXGraph.CreateInstance<POOrderEntry>();
             APInvoiceEntry apInvoiceEntry = PXGraph.CreateInstance<APInvoiceEntry>();
+            APPaymentEntry apPaymentEntry = PXGraph.CreateInstance<APPaymentEntry>();
 
             using (new MergeVendorScope())
             {
@@ -149,8 +150,15 @@ namespace AcuUnifiers
                         UpdateAPInvoice(apInvoice, apInvoiceEntry, filter);
                     }
 
-
                     // Update APPayments
+                    var apPayments = SelectFrom<APPayment>
+                                        .Where<APPayment.vendorID.IsEqual<@P.AsInt>
+                                            .And<APPayment.vendorLocationID.IsEqual<@P.AsInt>>>.View.Select(this, vendorDetail.BAccountID, vendorDetail.VendorLocationID);
+
+                    foreach (APPayment apPayment in apPayments)
+                    {
+                        UpdateAPPayment(apPayment, apPaymentEntry, filter);
+                    }
                 }
             }
         }
@@ -165,6 +173,7 @@ namespace AcuUnifiers
             poOrderEntry.Document.Cache.SetValueExt<POOrder.vendorLocationID>(poOrderEntry.Document.Current, filter.VendorLocationID);
             poOrderEntry.Document.UpdateCurrent();
             poOrderEntry.Document.Cache.SetValue<POOrder.vendorRefNbr>(poOrderEntry.Document.Current, vendorRef);
+
             poOrderEntry.Save.Press();
         }
 
@@ -178,7 +187,18 @@ namespace AcuUnifiers
             apInvoiceEntry.Document.UpdateCurrent();
 
             apInvoiceEntry.Save.Press();
+        }
 
+        private void UpdateAPPayment(APPayment apPayment, APPaymentEntry apPaymentEntry, CDVendorMergeFilter filter)
+        {
+            apPaymentEntry.Clear();
+            apPaymentEntry.Document.Current = apPayment;
+
+            apPaymentEntry.Document.Cache.SetValueExt<APPayment.vendorID>(apPaymentEntry.Document.Current, filter.VendorID);
+            apPaymentEntry.Document.Cache.SetValueExt<APPayment.vendorLocationID>(apPaymentEntry.Document.Current, filter.VendorLocationID);
+            apPaymentEntry.Document.UpdateCurrent();
+
+            apPaymentEntry.Save.Press();
         }
 
         #endregion
