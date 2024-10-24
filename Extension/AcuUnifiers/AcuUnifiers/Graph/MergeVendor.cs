@@ -105,10 +105,11 @@ namespace AcuUnifiers
         {
             if (filter.VendorID == null || filter.VendorLocationID == null)
             {
-                throw new PXException("Vendor, Vendor Location and Merging Option should be defined");
+                throw new PXException(Messages.FilterValidationMsg);
             }
 
             POOrderEntry poOrderEntry = PXGraph.CreateInstance<POOrderEntry>();
+            POReceiptEntry purchaseReceiptsEntry = PXGraph.CreateInstance<POReceiptEntry>();
             APInvoiceEntry apInvoiceEntry = PXGraph.CreateInstance<APInvoiceEntry>();
 
             using (new MergeVendorScope())
@@ -138,6 +139,14 @@ namespace AcuUnifiers
 
 
                     // Update Purchase Receipts
+                    var poReceipts = SelectFrom<POReceipt>
+                                        .Where<POReceipt.vendorID.IsEqual<@P.AsInt>
+                                            .And<POReceipt.vendorLocationID.IsEqual<@P.AsInt>>>.View.Select(this, vendorDetail.BAccountID, vendorDetail.VendorLocationID);
+
+                    foreach (var poReceipt in poReceipts)
+                    {
+                        UpdatePOReceipts(poReceipt, purchaseReceiptsEntry, filter);
+                    }
 
                     // Update AP Bills
 
@@ -153,6 +162,7 @@ namespace AcuUnifiers
 
                     // Update APPayments
                 }
+                ReCalculatevendorBalances(list, filter);
             }
         }
 
@@ -180,6 +190,69 @@ namespace AcuUnifiers
 
             apInvoiceEntry.Save.Press();
 
+        }
+
+        private void UpdatePOReceipts(POReceipt poReceipt, POReceiptEntry purchaseReceiptsEntry, CDVendorMergeFilter filter)
+        {
+            purchaseReceiptsEntry.Clear();
+            purchaseReceiptsEntry.Document.Current = poReceipt;
+
+            purchaseReceiptsEntry.Document.Cache.SetValueExt<POReceipt.vendorID>(purchaseReceiptsEntry.Document.Current, filter.VendorID);
+            purchaseReceiptsEntry.Document.Cache.SetValueExt<POReceipt.vendorLocationID>(purchaseReceiptsEntry.Document.Current, filter.VendorLocationID);
+            purchaseReceiptsEntry.Document.UpdateCurrent();
+
+            foreach (POReceiptLine receiptLine in purchaseReceiptsEntry.transactions.Select())
+            {
+                purchaseReceiptsEntry.transactions.Cache.SetValueExt<POReceiptLine.vendorID>(receiptLine, filter.VendorID);
+                purchaseReceiptsEntry.transactions.Update(receiptLine);
+            }
+            purchaseReceiptsEntry.Save.Press();
+        }
+
+        private void ReCalculatevendorBalances(List<CDVendorLocationDetail> list, CDVendorMergeFilter filter)
+        {
+            APReleaseProcess apReleaseProcess = PXGraph.CreateInstance<APReleaseProcess>();
+
+            //Re Calculate vendor Balances of merged vendors
+            foreach (CDVendorLocationDetail vendorDetail in list)
+            {
+                apReleaseProcess.Clear(PXClearOption.PreserveTimeStamp);
+                Vendor vendor = Vendor.PK.Find(this, vendorDetail.BAccountID);
+                apReleaseProcess.IntegrityCheckProc(vendor, "201201");
+                ReopenDocumentsHavingPendingApplications(apReleaseProcess, vendor, "201201");
+            }
+
+            // Re Calculate vendor Balances of base vendor
+            apReleaseProcess.Clear();
+            apReleaseProcess.Clear(PXClearOption.PreserveTimeStamp);
+            Vendor baseVendor = Vendor.PK.Find(this, filter.VendorID);
+            apReleaseProcess.IntegrityCheckProc(baseVendor, "201201");
+            ReopenDocumentsHavingPendingApplications(apReleaseProcess, baseVendor, "201201");
+
+        }
+
+        private static void ReopenDocumentsHavingPendingApplications(PXGraph graph, Vendor vendor, string finPeriod)
+        {
+            PXUpdate<Set<APRegister.openDoc, True>,
+                APRegister,
+                Where<APRegister.openDoc, Equal<False>,
+                    And<APRegister.vendorID, Equal<Required<APRegister.vendorID>>,
+                    And<APRegister.tranPeriodID, GreaterEqual<Required<APRegister.tranPeriodID>>,
+                    And<Exists<Select<APAdjust, Where<
+                        APAdjust.released, Equal<False>,
+                        And<APAdjust.adjgDocType, Equal<APRegister.docType>,
+                        And<APAdjust.adjgRefNbr, Equal<APRegister.refNbr>>>
+                        >>>>>>>>
+                .Update(graph, vendor.BAccountID, finPeriod);
+
+
+            PXUpdate<Set<APRegister.status, APDocStatus.open>,
+                APRegister,
+                Where<APRegister.status, Equal<APDocStatus.closed>,
+                    And<APRegister.vendorID, Equal<Required<APRegister.vendorID>>,
+                    And<APRegister.tranPeriodID, GreaterEqual<Required<APRegister.tranPeriodID>>,
+                    And<APRegister.openDoc, Equal<True>>>>>>
+                .Update(graph, vendor.BAccountID, finPeriod);
         }
 
         #endregion
