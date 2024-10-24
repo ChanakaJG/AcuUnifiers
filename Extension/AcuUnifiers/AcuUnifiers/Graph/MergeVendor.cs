@@ -38,7 +38,7 @@ namespace AcuUnifiers
         public virtual IEnumerable ViewVendor(PXAdapter adapter)
         {
             VendorMaint graph = CreateInstance<VendorMaint>();
-            graph.BAccount.Current = PXSelect<VendorR, Where<VendorR.bAccountID, Equal<Current<Vendor.bAccountID>>>>.Select(this);
+            graph.BAccount.Current = PXSelect<VendorR, Where<VendorR.bAccountID, Equal<Current<CDVendorLocationDetail.bAccountID>>>>.Select(this);
             throw new PXRedirectRequiredException(graph, true, "View Vendor") { Mode = PXBaseRedirectException.WindowMode.NewWindow };
         }
 
@@ -48,7 +48,7 @@ namespace AcuUnifiers
         public virtual IEnumerable ViewVendorLocation(PXAdapter adapter)
         {
             VendorLocationMaint graph = CreateInstance<VendorLocationMaint>();
-            graph.Location.Current = PXSelect<Location, Where<Location.locationID, Equal<Current<Location.locationID>>>>.Select(this);
+            graph.Location.Current = PXSelect<Location, Where<Location.locationID, Equal<Current<CDVendorLocationDetail.vendorLocationID>>>>.Select(this);
             throw new PXRedirectRequiredException(graph, true, "View Vendor Location") { Mode = PXBaseRedirectException.WindowMode.NewWindow };
         }
         #endregion
