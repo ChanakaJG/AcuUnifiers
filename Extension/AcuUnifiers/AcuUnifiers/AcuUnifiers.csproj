@@ -55,6 +55,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DAC\CDMergeVendorsAudit.cs" />
+    <Compile Include="DAC\CDMergeVendorsAuditTrn.cs" />
     <Compile Include="DAC\CDVendorLocationDetail.cs" />
     <Compile Include="DAC\CDVendorMergeFilter.cs" />
     <Compile Include="GraphExtension\CDAPInvoiceEntryExt.cs" />
@@ -73,7 +75,10 @@
       <Version>6.0.0</Version>
     </PackageReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="Report\CDAP6020.rpx" />
+    <None Include="Report\CDAP6030.rpx" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
