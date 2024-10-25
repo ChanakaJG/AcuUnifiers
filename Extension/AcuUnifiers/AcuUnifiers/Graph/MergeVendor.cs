@@ -70,7 +70,7 @@ namespace AcuUnifiers
             var res = SelectFrom<CDVendorLocationDetail>
                 .Where<CDVendorMergeFilter.vendorClassID.FromCurrent.IsNull.Or<CDVendorLocationDetail.vendorClassID.IsEqual<CDVendorMergeFilter.vendorClassID.FromCurrent>>>
                 .OrderBy<Asc<CDVendorLocationDetail.acctCD>>
-                .View.Select(this, CDVendorMergeFilter.Current.VendorID);
+                .View.Select(this);
             return res;
         }
         #endregion
@@ -95,8 +95,9 @@ namespace AcuUnifiers
         {
             CDVendorMergeFilter filter = e.Row;
 
-            PXUIFieldAttribute.SetVisible<CDVendorMergeFilter.mergingDate>(e.Cache, filter, filter.MergingOption != Constants.MergingOptionValueAllTransactions);
-
+            PXUIFieldAttribute.SetVisible<CDVendorMergeFilter.mergingDate>(e.Cache, filter, filter.MergingOption == Constants.MergingOptionValueOpenPurchaseOrders);
+            PXUIFieldAttribute.SetVisible<CDVendorMergeFilter.updateGLAccounts>(e.Cache, filter, filter.MergingOption == Constants.MergingOptionValueAllTransactions);
+            
             VendorsToBeMerged.SetProcessDelegate(delegate (List<CDVendorLocationDetail> list)
             {
                 MergeVendor graph = CreateInstance<MergeVendor>();
@@ -118,10 +119,14 @@ namespace AcuUnifiers
 
             using (new PXConnectionScope())
             {
-                Location res = SelectFrom<Location>.Where<Location.bAccountID.IsEqual<@P.AsInt>
-                    .And<Location.isActive.IsEqual<True>.And<Location.isDefault.IsEqual<True>>>>.View.Select(this, detail.BAccountID);
+                Vendor ven = Vendor.PK.Find(this, detail.BAccountID);
+                Location location = SelectFrom<Location>.Where<Location.locationID.IsEqual<@P.AsInt>>.View.Select(this, detail.VendorLocationID);
 
-                detail.VendorLocationID = res.LocationID;
+                detail.AcctCD = ven.AcctCD;
+                detail.AcctName = ven.AcctName;
+                detail.VendorClassID = ven.ClassID;
+                detail.VendorLocationID = location.LocationID;
+                detail.VendorLocationCD = location.LocationCD;
             }
 
         }
@@ -235,6 +240,8 @@ namespace AcuUnifiers
                                     parameterList.RefNumber = apPayment.RefNbr;
                                     InsertAuditDetails(vendorDetail, filter, parameterList);
                                 }
+                                //Audit Master
+                                InsertAuditMaster(vendorDetail, filter, guid, dateTime);
 
                                 List<Location> locations = SelectFrom<Location>.Where<Location.bAccountID.IsEqual<@P.AsInt>
                                                     .And<Location.isActive.IsEqual<True>>>.View.Select(this, vendorDetail.BAccountID).RowCast<Location>().ToList();
@@ -249,8 +256,6 @@ namespace AcuUnifiers
                                 if (activeLocations.Count() == 0)
                                     UpdateVendorStatus(vendorDetail);
 
-                                //Audit Master
-                                InsertAuditMaster(vendorDetail, filter, guid, dateTime);
 
                                 tx.Complete();
                             }
@@ -295,8 +300,34 @@ namespace AcuUnifiers
                                             .And<POReceiptLine.pONbr.IsEqual<@P.AsString>>>.View.Select(this, poOrder.OrderType, poOrder.OrderNbr);
 
                                     if (receiptLines.Count == 0)
+                                    {
                                         UpdatePOOrders(poOrder, poOrderEntry, filter);
+
+                                        //Audit Details
+                                        ParameterList parameterList = new ParameterList();
+                                        parameterList.AffectedEntity = "PO Orders";
+                                        parameterList.DocType = poOrder.OrderType;
+                                        parameterList.RefNumber = poOrder.VendorRefNbr;
+                                        InsertAuditDetails(vendorDetail, filter, parameterList);
+                                    }
                                 }
+
+                                //Audit Master
+                                InsertAuditMaster(vendorDetail, filter, guid, dateTime);
+
+                                List<Location> locations = SelectFrom<Location>.Where<Location.bAccountID.IsEqual<@P.AsInt>
+                                                    .And<Location.isActive.IsEqual<True>>>.View.Select(this, vendorDetail.BAccountID).RowCast<Location>().ToList();
+
+                                var currentLocation = locations.Where(x => x.LocationID == vendorDetail.VendorLocationID).FirstOrDefault();
+
+                                if (currentLocation != null && currentLocation.IsDefault != true)
+                                    UpdateVendorLocationStatus(currentLocation);
+
+                                var activeLocations = locations.Where(x => x.IsDefault != true && x.Status == VendorStatus.Active);
+
+                                if (activeLocations.Count() == 0)
+                                    UpdateVendorStatus(vendorDetail);
+
 
                                 tx.Complete();
                             }

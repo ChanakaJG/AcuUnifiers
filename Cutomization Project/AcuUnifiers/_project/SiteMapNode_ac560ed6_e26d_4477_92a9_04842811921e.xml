@@ -25,7 +25,7 @@
         </layout>
         <data>
             <SiteMap>
-                <row Title="Merge Audit Transation Report" Url="~/Frames/ReportLauncher.aspx?ID=CDAP6030.rpx" ScreenID="CDAP6030" NodeID="ac560ed6-e26d-4477-92a9-04842811921e" ParentID="00000000-0000-0000-0000-000000000000" SelectedUI="E">
+                <row Title="Merge Audit Transaction Report" Url="~/Frames/ReportLauncher.aspx?ID=CDAP6030.rpx" ScreenID="CDAP6030" NodeID="ac560ed6-e26d-4477-92a9-04842811921e" ParentID="00000000-0000-0000-0000-000000000000" SelectedUI="E">
                     <MUIScreen IsPortal="0" WorkspaceID="c6f8a479-2339-4665-a20d-50f5bf38c228" Order="251" SubcategoryID="0b491e12-c58d-4e47-8a0d-96dd3a8ab395" />
                 </row>
             </SiteMap>

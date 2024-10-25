@@ -31,10 +31,10 @@
 		<Levels>
 			<px:PXGridLevel DataMember="VendorsToBeMerged">
 				<RowTemplate>
-					<px:PXSegmentMask runat="server" DataField="VendorLocationID" AutoRefresh="True" ID="CstPXSegmentMask3" ></px:PXSegmentMask></RowTemplate>
+					</RowTemplate>
 				<Columns>
 					<px:PXGridColumn Type="CheckBox" DataField="Selected" Width="60" AllowCheckAll="True" ></px:PXGridColumn>
 					<px:PXGridColumn DataField="AcctCD" Width="140" LinkCommand="ViewVendor" ></px:PXGridColumn>
-					<px:PXGridColumn DataField="AcctName" Width="280" />
-					<px:PXGridColumn DataField="VendorLocationID" Width="70" LinkCommand="ViewVendorLocation" ></px:PXGridColumn>
+					<px:PXGridColumn DataField="AcctName" Width="280" ></px:PXGridColumn>
+					<px:PXGridColumn LinkCommand="ViewVendorLocation" DataField="VendorLocationCD" Width="70" ></px:PXGridColumn>
 					<px:PXGridColumn DataField="VendorClassID" Width="120" ></px:PXGridColumn></Columns></px:PXGridLevel></Levels></px:PXGrid></asp:Content>
