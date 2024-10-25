@@ -76,6 +76,21 @@ namespace AcuUnifiers
         #endregion
 
         #region Event Handlers
+
+        protected virtual void _(Events.FieldVerifying<CDVendorMergeFilter, CDVendorMergeFilter.mergingOption> e)
+        {
+            if (e.NewValue == null) return;
+
+            if (e.NewValue.ToString() == Constants.MergingOptionValueAllTransactions)
+            {
+                if (CDVendorMergeFilter.Ask(Messages.Warning, Messages.MergingOptionATMsg, MessageButtons.OK) == WebDialogResult.OK) { }
+            }
+            else if (e.NewValue.ToString() == Constants.MergingOptionValueOpenPurchaseOrders)
+            {
+                if (CDVendorMergeFilter.Ask(Messages.Warning, Messages.MergingOptionOpenMsg, MessageButtons.OK) == WebDialogResult.OK) { }
+            }
+        }
+
         protected void _(Events.RowSelected<CDVendorMergeFilter> e)
         {
             CDVendorMergeFilter filter = e.Row;
@@ -109,21 +124,6 @@ namespace AcuUnifiers
                 detail.VendorLocationID = res.LocationID;
             }
 
-        }
-
-
-        protected virtual void _(Events.FieldVerifying<CDVendorMergeFilter, CDVendorMergeFilter.mergingOption> e)
-        {
-            if (e.NewValue == null) return; 
-
-            if (e.NewValue.ToString() == Constants.MergingOptionValueAllTransactions)
-            {
-                if (CDVendorMergeFilter.Ask(Messages.Warning, Messages.MergingOptionATMsg, MessageButtons.OK) == WebDialogResult.OK){ }
-            }
-            else if (e.NewValue.ToString() == Constants.MergingOptionValueOpenTransactions)
-            {
-                if (CDVendorMergeFilter.Ask(Messages.Warning, Messages.MergingOptionOpenMsg, MessageButtons.OK) == WebDialogResult.OK){ }
-            }
         }
 
         #endregion
