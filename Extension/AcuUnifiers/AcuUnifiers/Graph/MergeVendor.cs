@@ -279,7 +279,7 @@ namespace AcuUnifiers
 
             apInvoiceEntry.Save.Press();
 
-            if (apInvoice.Released == true)
+            if (apInvoice.Released == true && filter.UpdateGLAccounts == true)
             {
                 APInvoice updated = apInvoiceEntry.Document.Current;
                 UpdateGl(apInvoice.VendorID, apInvoice.BatchNbr, BatchModule.AP, previousAPActId, previousAPSubId, updated.APAccountID, updated.APSubID);
@@ -302,7 +302,7 @@ namespace AcuUnifiers
 
             apPaymentEntry.Save.Press();
 
-            if (apPayment.Released == true)
+            if (apPayment.Released == true && filter.UpdateGLAccounts == true)
             {
                 APPayment updated = apPaymentEntry.Document.Current;
                 UpdateGl(apPayment.VendorID, apPayment.BatchNbr, BatchModule.AP, previousAPActId, previousAPSubId, updated.APAccountID, updated.APSubID);
@@ -325,6 +325,7 @@ namespace AcuUnifiers
             }
             purchaseReceiptsEntry.Save.Press();
         }
+
         private void UpdateGl(int? vendorId, string batchNbr, string module, int? previousAPActId, int? previousAPSubId, int? newAPActId, int? newAPSubId)
         {
             PXUpdate<Set<GLTran.accountID, Required<GLTran.accountID>,
