@@ -210,6 +210,7 @@ namespace AcuUnifiers
                     }
                 }
                 ReCalculatevendorBalances(list, filter);
+                ReAccountHistoryHistory("202301");
             }
         }
 
@@ -331,6 +332,25 @@ namespace AcuUnifiers
             apReleaseProcess.IntegrityCheckProc(baseVendor, "201201");
             ReopenDocumentsHavingPendingApplications(apReleaseProcess, baseVendor, "201201");
 
+        }
+
+        private void ReAccountHistoryHistory(string period)
+        {
+            PostGraph postGraph = PXGraph.CreateInstance<PostGraph>();
+            Ledger ledger = SelectFrom<Ledger>.Where<Ledger.balanceType.IsEqual<LedgerBalanceType.actual>>.View.Select(this);
+
+            while (RunningFlagScope<PostGraph>.IsRunning)
+            {
+                System.Threading.Thread.Sleep(10);
+            }
+
+            using (new RunningFlagScope<GLHistoryValidate>())
+            {
+                postGraph.Clear();
+                postGraph.IntegrityCheckProc(ledger, period);
+                postGraph = PXGraph.CreateInstance<PostGraph>();
+                postGraph.PostBatchesRequiredPosting();
+            }
         }
 
         private static void ReopenDocumentsHavingPendingApplications(PXGraph graph, Vendor vendor, string finPeriod)
