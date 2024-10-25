@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using PX.Data;
 using PX.Data.BQL;
 using PX.Data.BQL.Fluent;
@@ -21,6 +22,10 @@ namespace AcuUnifiers
         public PXFilter<CDVendorMergeFilter> CDVendorMergeFilter;
 
         public PXFilteredProcessingOrderBy<CDVendorLocationDetail, CDVendorMergeFilter, OrderBy<Asc<CDVendorLocationDetail.acctCD>>> VendorsToBeMerged;
+
+        public PXSelect<CDMergeVendorsAudit> auditView;
+
+        public PXSelect<CDMergeVendorsAuditTrn> auditTrnView;
         #endregion
 
         #region Constructor
@@ -115,8 +120,14 @@ namespace AcuUnifiers
 
             using (new MergeVendorScope())
             {
+                Guid guid = Guid.NewGuid();
+                DateTime dateTime = DateTime.Now;
+
                 foreach (CDVendorLocationDetail vendorDetail in list)
                 {
+                    //Audit Master
+                    InsertAuditMaster(vendorDetail, guid, dateTime, filter);
+
                     if (vendorDetail.VendorLocationID == null)
                     {
                         PXProcessing<CDVendorLocationDetail>.SetWarning("Vendor Location should be defined");
@@ -275,6 +286,27 @@ namespace AcuUnifiers
                 .Update(graph, vendor.BAccountID, finPeriod);
         }
 
+        public void InsertAuditMaster(CDVendorLocationDetail vendorDetail, Guid guid, DateTime dateTime, CDVendorMergeFilter filter)
+        {
+            var vendorTo = Vendor.PK.Find(this, filter.VendorID);
+            var locationTo = Location.PK.Find(this, vendorDetail.BAccountID, vendorDetail.VendorLocationID); //????
+            var locationFrom = Location.PK.Find(this, vendorDetail.BAccountID, vendorDetail.VendorLocationID);
+
+
+            CDMergeVendorsAudit mergeVendorsAudit = new CDMergeVendorsAudit();
+            mergeVendorsAudit.TrnUser = this.Accessinfo.UserName;
+            mergeVendorsAudit.TrnDate = dateTime;
+            mergeVendorsAudit.MergeVendorFrom = vendorDetail.AcctCD;
+            mergeVendorsAudit.MergeVendorLocationFrom = locationFrom.LocationCD;
+            mergeVendorsAudit.MergeVendorTo = vendorTo.AcctCD;    
+            mergeVendorsAudit.MergeVendorLocationTo = locationTo.LocationCD;
+            mergeVendorsAudit.Type = filter.MergingOption;              
+            mergeVendorsAudit.BatchID = guid;
+
+            this.auditView.Cache.Update(mergeVendorsAudit);
+            this.Actions.PressSave();
+
+        }
         #endregion
     }
 }
