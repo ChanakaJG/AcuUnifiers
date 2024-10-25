@@ -4,6 +4,7 @@ using PX.Data.BQL.Fluent;
 using PX.Objects.AP;
 using PX.Objects.Common.Scopes;
 using PX.Objects.CR;
+using PX.Objects.GL;
 using PX.Objects.PO;
 using System;
 using System.Collections;
@@ -243,23 +244,43 @@ namespace AcuUnifiers
             apInvoiceEntry.Clear();
             apInvoiceEntry.Document.Current = apInvoice;
 
+            int? previousAPActId = apInvoice.APAccountID;
+            int? previousAPSubId = apInvoice.APSubID;
+
             apInvoiceEntry.Document.Cache.SetValueExt<APInvoice.vendorID>(apInvoiceEntry.Document.Current, filter.VendorID);
             apInvoiceEntry.Document.Cache.SetValueExt<APInvoice.vendorLocationID>(apInvoiceEntry.Document.Current, filter.VendorLocationID);
             apInvoiceEntry.Document.UpdateCurrent();
 
             apInvoiceEntry.Save.Press();
+
+            if (apInvoice.Released == true)
+            {
+                APInvoice updated = apInvoiceEntry.Document.Current;
+                UpdateGl(apInvoice.VendorID, apInvoice.BatchNbr, BatchModule.AP, previousAPActId, previousAPSubId, updated.APAccountID, updated.APSubID);
+            }
         }
+
+      
 
         private void UpdateAPPayment(APPayment apPayment, APPaymentEntry apPaymentEntry, CDVendorMergeFilter filter)
         {
             apPaymentEntry.Clear();
             apPaymentEntry.Document.Current = apPayment;
 
+            int? previousAPActId = apPayment.APAccountID;
+            int? previousAPSubId = apPayment.APSubID;
+
             apPaymentEntry.Document.Cache.SetValueExt<APPayment.vendorID>(apPaymentEntry.Document.Current, filter.VendorID);
             apPaymentEntry.Document.Cache.SetValueExt<APPayment.vendorLocationID>(apPaymentEntry.Document.Current, filter.VendorLocationID);
             apPaymentEntry.Document.UpdateCurrent();
 
             apPaymentEntry.Save.Press();
+
+            if (apPayment.Released == true)
+            {
+                APPayment updated = apPaymentEntry.Document.Current;
+                UpdateGl(apPayment.VendorID, apPayment.BatchNbr, BatchModule.AP, previousAPActId, previousAPSubId, updated.APAccountID, updated.APSubID);
+            }
         }
 
         private void UpdatePOReceipts(POReceipt poReceipt, POReceiptEntry purchaseReceiptsEntry, CDVendorMergeFilter filter)
@@ -277,6 +298,17 @@ namespace AcuUnifiers
                 purchaseReceiptsEntry.transactions.Update(receiptLine);
             }
             purchaseReceiptsEntry.Save.Press();
+        }
+        private void UpdateGl(int? vendorId, string batchNbr, string module, int? previousAPActId, int? previousAPSubId, int? newAPActId, int? newAPSubId)
+        {
+            PXUpdate<Set<GLTran.accountID, Required<GLTran.accountID>,
+               Set<GLTran.subID, Required<GLTran.subID>,
+               Set<GLTran.referenceID, Required<GLTran.referenceID>>>>, GLTran,
+                Where<GLTran.batchNbr, Equal<Required<GLTran.batchNbr>>,
+               And<GLTran.module, Equal<Required<GLTran.module>>,
+                And<GLTran.accountID, Equal<Required<GLTran.accountID>>,
+               And<GLTran.subID, Equal<Required<GLTran.subID>>>>>>>
+               .Update(this, newAPActId, newAPSubId, vendorId, batchNbr, module, previousAPActId, previousAPSubId);
         }
 
         private void ReCalculatevendorBalances(List<CDVendorLocationDetail> list, CDVendorMergeFilter filter)
