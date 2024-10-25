@@ -21,7 +21,7 @@
 			<px:PXDropDown CommitChanges="True" runat="server" ID="CstPXDropDown1" DataField="MergingOption" ></px:PXDropDown>
 			<px:PXDateTimeEdit CommitChanges="True" runat="server" ID="CstPXDateTimeEdit3" DataField="MergingDate" ></px:PXDateTimeEdit>
 			<px:PXCheckBox CommitChanges="True" runat="server" ID="CstPXCheckBox2" DataField="UpdateGLAccounts" ></px:PXCheckBox>
-			<px:PXLayoutRule runat="server" StartGroup="True" StartColumn="True" GroupCaption="Filter Merging Vendors" ID="CstPXLayoutRule6" ></px:PXLayoutRule>
+			<px:PXLayoutRule runat="server" StartGroup="True" StartColumn="True" GroupCaption="Filter By" ID="CstPXLayoutRule6" ></px:PXLayoutRule>
 			<px:PXSelector runat="server" DataField="VendorClassID" CommitChanges="True" ID="CstPXSelector4" ></px:PXSelector></Template>
 	</px:PXFormView>
 </asp:Content>

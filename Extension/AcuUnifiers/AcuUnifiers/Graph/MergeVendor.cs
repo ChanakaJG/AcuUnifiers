@@ -432,16 +432,16 @@ namespace AcuUnifiers
             {
                 apReleaseProcess.Clear(PXClearOption.PreserveTimeStamp);
                 Vendor vendor = Vendor.PK.Find(this, vendorDetail.BAccountID);
-                apReleaseProcess.IntegrityCheckProc(vendor, "201201");
-                ReopenDocumentsHavingPendingApplications(apReleaseProcess, vendor, "201201");
+                apReleaseProcess.IntegrityCheckProc(vendor, "202301");
+                ReopenDocumentsHavingPendingApplications(apReleaseProcess, vendor, "202301");
             }
 
             // Re Calculate vendor Balances of base vendor
             apReleaseProcess.Clear();
             apReleaseProcess.Clear(PXClearOption.PreserveTimeStamp);
             Vendor baseVendor = Vendor.PK.Find(this, filter.VendorID);
-            apReleaseProcess.IntegrityCheckProc(baseVendor, "201201");
-            ReopenDocumentsHavingPendingApplications(apReleaseProcess, baseVendor, "201201");
+            apReleaseProcess.IntegrityCheckProc(baseVendor, "202301");
+            ReopenDocumentsHavingPendingApplications(apReleaseProcess, baseVendor, "202301");
 
         }
 
