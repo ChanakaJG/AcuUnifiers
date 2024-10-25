@@ -278,7 +278,9 @@ namespace AcuUnifiers
 
                         using (var tx = new PXTransactionScope())
                         {
-                            var poOrders = SelectFrom<POOrder>
+                            try
+                            {
+                                var poOrders = SelectFrom<POOrder>
                                             .Where<POOrder.vendorID.IsEqual<@P.AsInt>
                                             .And<POOrder.vendorLocationID.IsEqual<@P.AsInt>
                                             .And<POOrder.orderDate.IsGreaterEqual<@P.AsDateTime>
@@ -286,17 +288,22 @@ namespace AcuUnifiers
                                                 .Or<POOrder.status.IsEqual<POOrderStatus.pendingApproval>
                                                 .Or<POOrder.status.IsEqual<POOrderStatus.open>>>>>>>>>.View.Select(this, vendorDetail.BAccountID, vendorDetail.VendorLocationID, filter.MergingDate);
 
-                            foreach (POOrder poOrder in poOrders)
-                            {
-                                var receiptLines = SelectFrom<POReceiptLine>
-                                    .Where<POReceiptLine.pOType.IsEqual<@P.AsString>
-                                        .And<POReceiptLine.pONbr.IsEqual<@P.AsString>>>.View.Select(this, poOrder.OrderType, poOrder.OrderNbr);
+                                foreach (POOrder poOrder in poOrders)
+                                {
+                                    var receiptLines = SelectFrom<POReceiptLine>
+                                        .Where<POReceiptLine.pOType.IsEqual<@P.AsString>
+                                            .And<POReceiptLine.pONbr.IsEqual<@P.AsString>>>.View.Select(this, poOrder.OrderType, poOrder.OrderNbr);
 
-                                if(receiptLines.Count == 0)
-                                    UpdatePOOrders(poOrder, poOrderEntry, filter);
+                                    if (receiptLines.Count == 0)
+                                        UpdatePOOrders(poOrder, poOrderEntry, filter);
+                                }
+
+                                tx.Complete();
                             }
-
-                            tx.Complete();
+                            catch (Exception ex)
+                            {
+                                PXProcessing<CDVendorLocationDetail>.SetError(ex);
+                            }
                         }
                     }
                 }
