@@ -195,7 +195,7 @@ namespace AcuUnifiers
                                     ParameterList parameterList = new ParameterList();
                                     parameterList.AffectedEntity = "AP Bills";
                                     parameterList.DocType = apInvoice.DocType;
-                                    parameterList.RefNumber = apInvoice.InvoiceNbr;
+                                    parameterList.RefNumber = apInvoice.RefNbr;
                                     InsertAuditDetails(vendorDetail, filter, parameterList);
                                 }
 
