@@ -1,6 +1,8 @@
 using PX.Data;
+using PX.Data.Access;
 using PX.Data.BQL;
 using PX.Data.BQL.Fluent;
+using PX.Data.BusinessProcess;
 using PX.Objects.AP;
 using PX.Objects.Common.Scopes;
 using PX.Objects.CR;
@@ -8,6 +10,8 @@ using PX.Objects.PO;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices.WindowsRuntime;
+using static AcuUnifiers.CDVendorMergeFilter;
 
 namespace AcuUnifiers
 {
@@ -96,6 +100,21 @@ namespace AcuUnifiers
                 detail.VendorLocationID = res.LocationID;
             }
 
+        }
+
+
+        protected virtual void _(Events.FieldVerifying<CDVendorMergeFilter, CDVendorMergeFilter.mergingOption> e)
+        {
+            if (e.NewValue == null) return; 
+
+            if (e.NewValue.ToString() == Constants.MergingOptionValueAllTransactions)
+            {
+                if (CDVendorMergeFilter.Ask(Messages.Warning, Messages.MergingOptionATMsg, MessageButtons.OK) == WebDialogResult.OK){ }
+            }
+            else if (e.NewValue.ToString() == Constants.MergingOptionValueOpenTransactions)
+            {
+                if (CDVendorMergeFilter.Ask(Messages.Warning, Messages.MergingOptionOpenMsg, MessageButtons.OK) == WebDialogResult.OK){ }
+            }
         }
 
         #endregion

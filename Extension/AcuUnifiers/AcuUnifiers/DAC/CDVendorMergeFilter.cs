@@ -47,7 +47,7 @@ namespace AcuUnifiers
         [PXStringList(new string[] { Constants.MergingOptionValueAllTransactions, Constants.MergingOptionValueOpenTransactions},
                       new string[] { Messages.MergingOptionLabelAllTransactions, Messages.MergingOptionLabelOpenTransactions})]
         [PXUIField(DisplayName = "Merging Option", Required = true)]
-        [PXDefault(Constants.MergingOptionValueAllTransactions)]
+        //[PXDefault(Constants.MergingOptionValueAllTransactions)]
         public virtual string MergingOption { get; set; }
         #endregion
 
