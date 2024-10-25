@@ -1,0 +1,17 @@
+﻿<Sql TableName="CDMergeVendorsAudit" TableSchemaXml="#CDATA">
+    <CDATA name="TableSchemaXml"><![CDATA[<table name="CDMergeVendorsAudit">
+  <col name="NoteID" type="UniqueIdentifier" />
+  <col name="TrnUser" type="NVarChar(30)" nullable="true" />
+  <col name="TrnDate" type="DateTime" nullable="true" />
+  <col name="MergeVendorFrom" type="NVarChar(30)" nullable="true" />
+  <col name="MergeVendorLocationFrom" type="Int" nullable="true" />
+  <col name="MergeVendorTo" type="NVarChar(30)" nullable="true" />
+  <col name="MergeVendorLocationTo" type="Int" nullable="true" />
+  <col name="BatchID" type="UniqueIdentifier" nullable="true" />
+  <col name="Type" type="NVarChar(10)" nullable="true" />
+  <col name="VendorAuditID" type="Int" nullable="true" />
+  <index name="PK_MergeVendorsAudit" clustered="true" primary="true" unique="true">
+    <col name="NoteID" />
+  </index>
+</table>]]></CDATA>
+</Sql>

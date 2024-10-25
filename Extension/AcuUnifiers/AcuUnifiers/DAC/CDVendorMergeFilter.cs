@@ -44,8 +44,8 @@ namespace AcuUnifiers
         #region MergingOption
         public abstract class mergingOption : PX.Data.BQL.BqlString.Field<mergingOption> { }
         [PXDBString(2, IsFixed = true, IsUnicode = true)]
-        [PXStringList(new string[] { Constants.MergingOptionValueAllTransactions, Constants.MergingOptionValueOpenTransactions},
-                      new string[] { Messages.MergingOptionLabelAllTransactions, Messages.MergingOptionLabelOpenTransactions})]
+        [PXStringList(new string[] { Constants.MergingOptionValueAllTransactions, Constants.MergingOptionValueOpenPurchaseOrders},
+                      new string[] { Messages.MergingOptionLabelAllTransactions, Messages.MergingOptionLabelOpenPurchaseOrders})]
         [PXUIField(DisplayName = "Merging Option", Required = true)]
         //[PXDefault(Constants.MergingOptionValueAllTransactions)]
         public virtual string MergingOption { get; set; }
@@ -57,6 +57,14 @@ namespace AcuUnifiers
         [PXUIField(DisplayName = "Update GL Accounts", Required = true)]
         [PXDefault(false)]
         public virtual bool? UpdateGLAccounts { get; set; }
+        #endregion
+
+        #region MergingDate
+        public abstract class mergingDate : PX.Data.BQL.BqlDateTime.Field<mergingDate> { }
+        [PXDBDate()]
+        [PXUIField(DisplayName = "Merging Date", Required = true)]
+        [PXDefault(typeof(AccessInfo.businessDate))]
+        public virtual DateTime? MergingDate { get; set; }
         #endregion
     }
 }

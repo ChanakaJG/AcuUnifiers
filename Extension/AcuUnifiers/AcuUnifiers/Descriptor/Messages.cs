@@ -11,7 +11,7 @@ namespace AcuUnifiers
     public class Messages
     {
         public const string MergingOptionLabelAllTransactions = "All Transactions";
-        public const string MergingOptionLabelOpenTransactions = "Open Transactions";
+        public const string MergingOptionLabelOpenPurchaseOrders = "Open Purchase Orders";
 
         public const string FilterValidationMsg = "Vendor, Vendor Location and Merging Option should be defined";
 
@@ -24,6 +24,6 @@ namespace AcuUnifiers
     public class Constants
     {
         public const string MergingOptionValueAllTransactions = "AT";
-        public const string MergingOptionValueOpenTransactions = "OT";
+        public const string MergingOptionValueOpenPurchaseOrders = "OP";
     }
 }

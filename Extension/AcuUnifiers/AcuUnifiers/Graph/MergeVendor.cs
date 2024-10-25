@@ -1,3 +1,4 @@
+using PX.Common;
 using PX.Data;
 using PX.Data.Access;
 using PX.Data.BQL;
@@ -6,12 +7,14 @@ using PX.Data.BusinessProcess;
 using PX.Objects.AP;
 using PX.Objects.Common.Scopes;
 using PX.Objects.CR;
+using PX.Objects.GL;
 using PX.Objects.PO;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.InteropServices.WindowsRuntime;
-using static AcuUnifiers.CDVendorMergeFilter;
+using System.Linq;
+using static AcuUnifiers.MergeVendor;
+using System.Runtime.InteropServices;
 
 namespace AcuUnifiers
 {
@@ -25,6 +28,10 @@ namespace AcuUnifiers
         public PXFilter<CDVendorMergeFilter> CDVendorMergeFilter;
 
         public PXFilteredProcessingOrderBy<CDVendorLocationDetail, CDVendorMergeFilter, OrderBy<Asc<CDVendorLocationDetail.acctCD>>> VendorsToBeMerged;
+
+        public PXSelect<CDMergeVendorsAudit> auditView;
+
+        public PXSelect<CDMergeVendorsAuditTrn> auditTrnView;
         #endregion
 
         #region Constructor
@@ -72,6 +79,8 @@ namespace AcuUnifiers
         protected void _(Events.RowSelected<CDVendorMergeFilter> e)
         {
             CDVendorMergeFilter filter = e.Row;
+
+            PXUIFieldAttribute.SetVisible<CDVendorMergeFilter.mergingDate>(e.Cache, filter, filter.MergingOption != Constants.MergingOptionValueAllTransactions);
 
             VendorsToBeMerged.SetProcessDelegate(delegate (List<CDVendorLocationDetail> list)
             {
@@ -134,6 +143,9 @@ namespace AcuUnifiers
 
             using (new MergeVendorScope())
             {
+                Guid guid = Guid.NewGuid();
+                DateTime dateTime = DateTime.Now;
+
                 if (filter.MergingOption == Constants.MergingOptionValueAllTransactions)
                 {
                     foreach (CDVendorLocationDetail vendorDetail in list)
@@ -161,6 +173,13 @@ namespace AcuUnifiers
                                 foreach (POOrder poOrder in poOrders)
                                 {
                                     UpdatePOOrders(poOrder, poOrderEntry, filter);
+
+                                    //Audit Details
+                                    ParameterList parameterList = new ParameterList();
+                                    parameterList.AffectedEntity = "PO Orders";
+                                    parameterList.DocType = poOrder.OrderType;
+                                    parameterList.RefNumber = poOrder.VendorRefNbr;
+                                    InsertAuditDetails(vendorDetail, filter, parameterList);
                                 }
 
 
@@ -172,6 +191,14 @@ namespace AcuUnifiers
                                 foreach (var poReceipt in poReceipts)
                                 {
                                     UpdatePOReceipts(poReceipt, purchaseReceiptsEntry, filter);
+
+                                    //Audit Details
+                                    POReceipt _poReceipt = poReceipt;
+                                    ParameterList parameterList = new ParameterList();
+                                    parameterList.AffectedEntity = "PO Receipts";
+                                    parameterList.DocType = _poReceipt.ReceiptType;
+                                    parameterList.RefNumber = _poReceipt.ReceiptNbr;
+                                    InsertAuditDetails(vendorDetail, filter, parameterList);
                                 }
 
                                 // Update AP Bills
@@ -183,6 +210,13 @@ namespace AcuUnifiers
                                 foreach (APInvoice apInvoice in apInvoices)
                                 {
                                     UpdateAPInvoice(apInvoice, apInvoiceEntry, filter);
+
+                                    //Audit Details
+                                    ParameterList parameterList = new ParameterList();
+                                    parameterList.AffectedEntity = "AP Bills";
+                                    parameterList.DocType = apInvoice.DocType;
+                                    parameterList.RefNumber = apInvoice.InvoiceNbr;
+                                    InsertAuditDetails(vendorDetail, filter, parameterList);
                                 }
 
                                 // Update APPayments
@@ -193,9 +227,30 @@ namespace AcuUnifiers
                                 foreach (APPayment apPayment in apPayments)
                                 {
                                     UpdateAPPayment(apPayment, apPaymentEntry, filter);
+
+                                    //Audit Details
+                                    ParameterList parameterList = new ParameterList();
+                                    parameterList.AffectedEntity = "AP Payments";
+                                    parameterList.DocType = apPayment.DocType;
+                                    parameterList.RefNumber = apPayment.RefNbr;
+                                    InsertAuditDetails(vendorDetail, filter, parameterList);
                                 }
 
-                                UpdateVendorStatus(vendorDetail);
+                                List<Location> locations = SelectFrom<Location>.Where<Location.bAccountID.IsEqual<@P.AsInt>
+                                                    .And<Location.isActive.IsEqual<True>>>.View.Select(this, vendorDetail.BAccountID).RowCast<Location>().ToList();
+                                
+                                var currentLocation = locations.Where(x => x.LocationID == vendorDetail.VendorLocationID).FirstOrDefault();
+
+                                if (currentLocation != null && currentLocation.IsDefault != true)
+                                    UpdateVendorLocationStatus(currentLocation);
+
+                                var activeLocations = locations.Where(x => x.IsDefault != true && x.Status == VendorStatus.Active);
+
+                                if (activeLocations.Count() == 0)
+                                    UpdateVendorStatus(vendorDetail);
+
+                                //Audit Master
+                                InsertAuditMaster(vendorDetail, filter, guid, dateTime);
 
                                 tx.Complete();
                             }
@@ -206,7 +261,7 @@ namespace AcuUnifiers
                         }
                     }
                 }
-                else
+                else if(filter.MergingOption == Constants.MergingOptionValueOpenPurchaseOrders)
                 {
                     foreach (CDVendorLocationDetail vendorDetail in list)
                     {
@@ -223,12 +278,43 @@ namespace AcuUnifiers
 
                         using (var tx = new PXTransactionScope())
                         {
+                            var poOrders = SelectFrom<POOrder>
+                                            .Where<POOrder.vendorID.IsEqual<@P.AsInt>
+                                            .And<POOrder.vendorLocationID.IsEqual<@P.AsInt>
+                                            .And<POOrder.orderDate.IsGreaterEqual<@P.AsDateTime>
+                                            .And<Brackets<Where<POOrder.status.IsEqual<POOrderStatus.hold>
+                                                .Or<POOrder.status.IsEqual<POOrderStatus.pendingApproval>
+                                                .Or<POOrder.status.IsEqual<POOrderStatus.open>>>>>>>>>.View.Select(this, vendorDetail.BAccountID, vendorDetail.VendorLocationID, filter.MergingDate);
 
+                            foreach (POOrder poOrder in poOrders)
+                            {
+                                var receiptLines = SelectFrom<POReceiptLine>
+                                    .Where<POReceiptLine.pOType.IsEqual<@P.AsString>
+                                        .And<POReceiptLine.pONbr.IsEqual<@P.AsString>>>.View.Select(this, poOrder.OrderType, poOrder.OrderNbr);
+
+                                if(receiptLines.Count == 0)
+                                    UpdatePOOrders(poOrder, poOrderEntry, filter);
+                            }
+
+                            tx.Complete();
                         }
                     }
                 }
                 ReCalculatevendorBalances(list, filter);
+                ReAccountHistoryHistory("202301");
             }
+        }
+
+        private void UpdateVendorLocationStatus(Location location)
+        {
+            VendorLocationMaint vendorLocationMaint = PXGraph.CreateInstance<VendorLocationMaint>();
+
+            vendorLocationMaint.Clear();
+
+            vendorLocationMaint.Location.Current = location;
+            vendorLocationMaint.Location.Current.Status = LocationStatus.Inactive;
+            vendorLocationMaint.Location.UpdateCurrent();
+            vendorLocationMaint.Actions.PressSave();
         }
 
         private void UpdateVendorStatus(CDVendorLocationDetail vendorDetail)
@@ -262,23 +348,43 @@ namespace AcuUnifiers
             apInvoiceEntry.Clear();
             apInvoiceEntry.Document.Current = apInvoice;
 
+            int? previousAPActId = apInvoice.APAccountID;
+            int? previousAPSubId = apInvoice.APSubID;
+
             apInvoiceEntry.Document.Cache.SetValueExt<APInvoice.vendorID>(apInvoiceEntry.Document.Current, filter.VendorID);
             apInvoiceEntry.Document.Cache.SetValueExt<APInvoice.vendorLocationID>(apInvoiceEntry.Document.Current, filter.VendorLocationID);
             apInvoiceEntry.Document.UpdateCurrent();
 
             apInvoiceEntry.Save.Press();
+
+            if (apInvoice.Released == true && filter.UpdateGLAccounts == true)
+            {
+                APInvoice updated = apInvoiceEntry.Document.Current;
+                UpdateGl(apInvoice.VendorID, apInvoice.BatchNbr, BatchModule.AP, previousAPActId, previousAPSubId, updated.APAccountID, updated.APSubID);
+            }
         }
+
+      
 
         private void UpdateAPPayment(APPayment apPayment, APPaymentEntry apPaymentEntry, CDVendorMergeFilter filter)
         {
             apPaymentEntry.Clear();
             apPaymentEntry.Document.Current = apPayment;
 
+            int? previousAPActId = apPayment.APAccountID;
+            int? previousAPSubId = apPayment.APSubID;
+
             apPaymentEntry.Document.Cache.SetValueExt<APPayment.vendorID>(apPaymentEntry.Document.Current, filter.VendorID);
             apPaymentEntry.Document.Cache.SetValueExt<APPayment.vendorLocationID>(apPaymentEntry.Document.Current, filter.VendorLocationID);
             apPaymentEntry.Document.UpdateCurrent();
 
             apPaymentEntry.Save.Press();
+
+            if (apPayment.Released == true && filter.UpdateGLAccounts == true)
+            {
+                APPayment updated = apPaymentEntry.Document.Current;
+                UpdateGl(apPayment.VendorID, apPayment.BatchNbr, BatchModule.AP, previousAPActId, previousAPSubId, updated.APAccountID, updated.APSubID);
+            }
         }
 
         private void UpdatePOReceipts(POReceipt poReceipt, POReceiptEntry purchaseReceiptsEntry, CDVendorMergeFilter filter)
@@ -296,6 +402,18 @@ namespace AcuUnifiers
                 purchaseReceiptsEntry.transactions.Update(receiptLine);
             }
             purchaseReceiptsEntry.Save.Press();
+        }
+
+        private void UpdateGl(int? vendorId, string batchNbr, string module, int? previousAPActId, int? previousAPSubId, int? newAPActId, int? newAPSubId)
+        {
+            PXUpdate<Set<GLTran.accountID, Required<GLTran.accountID>,
+               Set<GLTran.subID, Required<GLTran.subID>,
+               Set<GLTran.referenceID, Required<GLTran.referenceID>>>>, GLTran,
+                Where<GLTran.batchNbr, Equal<Required<GLTran.batchNbr>>,
+               And<GLTran.module, Equal<Required<GLTran.module>>,
+                And<GLTran.accountID, Equal<Required<GLTran.accountID>>,
+               And<GLTran.subID, Equal<Required<GLTran.subID>>>>>>>
+               .Update(this, newAPActId, newAPSubId, vendorId, batchNbr, module, previousAPActId, previousAPSubId);
         }
 
         private void ReCalculatevendorBalances(List<CDVendorLocationDetail> list, CDVendorMergeFilter filter)
@@ -320,6 +438,25 @@ namespace AcuUnifiers
 
         }
 
+        private void ReAccountHistoryHistory(string period)
+        {
+            PostGraph postGraph = PXGraph.CreateInstance<PostGraph>();
+            Ledger ledger = SelectFrom<Ledger>.Where<Ledger.balanceType.IsEqual<LedgerBalanceType.actual>>.View.Select(this);
+
+            while (RunningFlagScope<PostGraph>.IsRunning)
+            {
+                System.Threading.Thread.Sleep(10);
+            }
+
+            using (new RunningFlagScope<GLHistoryValidate>())
+            {
+                postGraph.Clear();
+                postGraph.IntegrityCheckProc(ledger, period);
+                postGraph = PXGraph.CreateInstance<PostGraph>();
+                postGraph.PostBatchesRequiredPosting();
+            }
+        }
+
         private static void ReopenDocumentsHavingPendingApplications(PXGraph graph, Vendor vendor, string finPeriod)
         {
             PXUpdate<Set<APRegister.openDoc, True>,
@@ -342,6 +479,49 @@ namespace AcuUnifiers
                     And<APRegister.tranPeriodID, GreaterEqual<Required<APRegister.tranPeriodID>>,
                     And<APRegister.openDoc, Equal<True>>>>>>
                 .Update(graph, vendor.BAccountID, finPeriod);
+        }
+
+        public void InsertAuditMaster(CDVendorLocationDetail vendorDetail, CDVendorMergeFilter filter, Guid guid, DateTime dateTime)
+        {
+            var vendorTo = Vendor.PK.Find(this, filter.VendorID);
+
+            CDMergeVendorsAudit mergeVendorsAudit = new CDMergeVendorsAudit();
+            mergeVendorsAudit.TrnUser = this.Accessinfo.UserName;
+            mergeVendorsAudit.TrnDate = dateTime;
+            mergeVendorsAudit.MergeVendorFrom = vendorDetail.AcctCD;
+            mergeVendorsAudit.MergeVendorLocationFrom = vendorDetail.VendorLocationID;
+            mergeVendorsAudit.MergeVendorTo = vendorTo.AcctCD;
+            mergeVendorsAudit.MergeVendorLocationTo = filter.VendorLocationID;
+            mergeVendorsAudit.Type = filter.MergingOption;
+            mergeVendorsAudit.BatchID = guid;
+
+            this.auditView.Cache.Update(mergeVendorsAudit);
+            this.Actions.PressSave();
+
+        }
+
+        public void InsertAuditDetails(CDVendorLocationDetail vendorDetail, CDVendorMergeFilter filter, ParameterList parameterList)
+        {
+            var vendorTo = Vendor.PK.Find(this, filter.VendorID);
+
+            CDMergeVendorsAuditTrn mergeVendorsAudittrn = new CDMergeVendorsAuditTrn();
+            mergeVendorsAudittrn.AffectedEntity = parameterList.AffectedEntity;
+            mergeVendorsAudittrn.DocType = parameterList.DocType;
+            mergeVendorsAudittrn.RefNumber = parameterList.RefNumber;
+            mergeVendorsAudittrn.OriginalVendor = vendorDetail.AcctCD;
+            mergeVendorsAudittrn.MergeVendorTo = vendorTo.AcctCD;
+            mergeVendorsAudittrn.BatchID = Guid.NewGuid();
+
+            this.auditTrnView.Cache.Update(mergeVendorsAudittrn);
+            this.Actions.PressSave();
+
+        }
+
+        public struct ParameterList
+        {
+            public string AffectedEntity { get; set; }
+            public string DocType { get; set; }
+            public string RefNumber { get; set; }
         }
 
         #endregion
