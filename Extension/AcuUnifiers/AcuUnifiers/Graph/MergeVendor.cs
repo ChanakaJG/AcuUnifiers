@@ -1,3 +1,4 @@
+using PX.Common;
 using PX.Data;
 using PX.Data.BQL;
 using PX.Data.BQL.Fluent;
@@ -8,6 +9,7 @@ using PX.Objects.PO;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace AcuUnifiers
 {
@@ -176,7 +178,18 @@ namespace AcuUnifiers
                                     UpdateAPPayment(apPayment, apPaymentEntry, filter);
                                 }
 
-                                UpdateVendorStatus(vendorDetail);
+                                List<Location> locations = SelectFrom<Location>.Where<Location.bAccountID.IsEqual<@P.AsInt>
+                                                    .And<Location.isActive.IsEqual<True>>>.View.Select(this, vendorDetail.BAccountID).RowCast<Location>().ToList();
+                                
+                                var currentLocation = locations.Where(x => x.LocationID == vendorDetail.VendorLocationID).FirstOrDefault();
+
+                                if (currentLocation != null && currentLocation.IsDefault != true)
+                                    UpdateVendorLocationStatus(currentLocation);
+
+                                var activeLocations = locations.Where(x => x.IsDefault != true && x.Status == VendorStatus.Active);
+
+                                if (activeLocations.Count() == 0)
+                                    UpdateVendorStatus(vendorDetail);
 
                                 tx.Complete();
                             }
@@ -210,6 +223,18 @@ namespace AcuUnifiers
                 }
                 ReCalculatevendorBalances(list, filter);
             }
+        }
+
+        private void UpdateVendorLocationStatus(Location location)
+        {
+            VendorLocationMaint vendorLocationMaint = PXGraph.CreateInstance<VendorLocationMaint>();
+
+            vendorLocationMaint.Clear();
+
+            vendorLocationMaint.Location.Current = location;
+            vendorLocationMaint.Location.Current.Status = LocationStatus.Inactive;
+            vendorLocationMaint.Location.UpdateCurrent();
+            vendorLocationMaint.Actions.PressSave();
         }
 
         private void UpdateVendorStatus(CDVendorLocationDetail vendorDetail)
