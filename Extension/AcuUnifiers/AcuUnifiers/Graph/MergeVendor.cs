@@ -11,6 +11,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using static AcuUnifiers.MergeVendor;
 using System.Runtime.InteropServices;
 
 namespace AcuUnifiers
@@ -25,6 +26,10 @@ namespace AcuUnifiers
         public PXFilter<CDVendorMergeFilter> CDVendorMergeFilter;
 
         public PXFilteredProcessingOrderBy<CDVendorLocationDetail, CDVendorMergeFilter, OrderBy<Asc<CDVendorLocationDetail.acctCD>>> VendorsToBeMerged;
+
+        public PXSelect<CDMergeVendorsAudit> auditView;
+
+        public PXSelect<CDMergeVendorsAuditTrn> auditTrnView;
         #endregion
 
         #region Constructor
@@ -121,6 +126,9 @@ namespace AcuUnifiers
 
             using (new MergeVendorScope())
             {
+                Guid guid = Guid.NewGuid();
+                DateTime dateTime = DateTime.Now;
+
                 if (filter.MergingOption == Constants.MergingOptionValueAllTransactions)
                 {
                     foreach (CDVendorLocationDetail vendorDetail in list)
@@ -148,6 +156,13 @@ namespace AcuUnifiers
                                 foreach (POOrder poOrder in poOrders)
                                 {
                                     UpdatePOOrders(poOrder, poOrderEntry, filter);
+
+                                    //Audit Details
+                                    ParameterList parameterList = new ParameterList();
+                                    parameterList.AffectedEntity = "PO Orders";
+                                    parameterList.DocType = poOrder.OrderType;
+                                    parameterList.RefNumber = poOrder.VendorRefNbr;
+                                    InsertAuditDetails(vendorDetail, filter, parameterList);
                                 }
 
 
@@ -159,6 +174,14 @@ namespace AcuUnifiers
                                 foreach (var poReceipt in poReceipts)
                                 {
                                     UpdatePOReceipts(poReceipt, purchaseReceiptsEntry, filter);
+
+                                    //Audit Details
+                                    POReceipt _poReceipt = poReceipt;
+                                    ParameterList parameterList = new ParameterList();
+                                    parameterList.AffectedEntity = "PO Receipts";
+                                    parameterList.DocType = _poReceipt.ReceiptType;
+                                    parameterList.RefNumber = _poReceipt.ReceiptNbr;
+                                    InsertAuditDetails(vendorDetail, filter, parameterList);
                                 }
 
                                 // Update AP Bills
@@ -170,6 +193,13 @@ namespace AcuUnifiers
                                 foreach (APInvoice apInvoice in apInvoices)
                                 {
                                     UpdateAPInvoice(apInvoice, apInvoiceEntry, filter);
+
+                                    //Audit Details
+                                    ParameterList parameterList = new ParameterList();
+                                    parameterList.AffectedEntity = "AP Bills";
+                                    parameterList.DocType = apInvoice.DocType;
+                                    parameterList.RefNumber = apInvoice.InvoiceNbr;
+                                    InsertAuditDetails(vendorDetail, filter, parameterList);
                                 }
 
                                 // Update APPayments
@@ -180,6 +210,13 @@ namespace AcuUnifiers
                                 foreach (APPayment apPayment in apPayments)
                                 {
                                     UpdateAPPayment(apPayment, apPaymentEntry, filter);
+
+                                    //Audit Details
+                                    ParameterList parameterList = new ParameterList();
+                                    parameterList.AffectedEntity = "AP Payments";
+                                    parameterList.DocType = apPayment.DocType;
+                                    parameterList.RefNumber = apPayment.RefNbr;
+                                    InsertAuditDetails(vendorDetail, filter, parameterList);
                                 }
 
                                 List<Location> locations = SelectFrom<Location>.Where<Location.bAccountID.IsEqual<@P.AsInt>
@@ -194,6 +231,9 @@ namespace AcuUnifiers
 
                                 if (activeLocations.Count() == 0)
                                     UpdateVendorStatus(vendorDetail);
+
+                                //Audit Master
+                                InsertAuditMaster(vendorDetail, filter, guid, dateTime);
 
                                 tx.Complete();
                             }
@@ -422,6 +462,49 @@ namespace AcuUnifiers
                     And<APRegister.tranPeriodID, GreaterEqual<Required<APRegister.tranPeriodID>>,
                     And<APRegister.openDoc, Equal<True>>>>>>
                 .Update(graph, vendor.BAccountID, finPeriod);
+        }
+
+        public void InsertAuditMaster(CDVendorLocationDetail vendorDetail, CDVendorMergeFilter filter, Guid guid, DateTime dateTime)
+        {
+            var vendorTo = Vendor.PK.Find(this, filter.VendorID);
+
+            CDMergeVendorsAudit mergeVendorsAudit = new CDMergeVendorsAudit();
+            mergeVendorsAudit.TrnUser = this.Accessinfo.UserName;
+            mergeVendorsAudit.TrnDate = dateTime;
+            mergeVendorsAudit.MergeVendorFrom = vendorDetail.AcctCD;
+            mergeVendorsAudit.MergeVendorLocationFrom = vendorDetail.VendorLocationID;
+            mergeVendorsAudit.MergeVendorTo = vendorTo.AcctCD;
+            mergeVendorsAudit.MergeVendorLocationTo = filter.VendorLocationID;
+            mergeVendorsAudit.Type = filter.MergingOption;
+            mergeVendorsAudit.BatchID = guid;
+
+            this.auditView.Cache.Update(mergeVendorsAudit);
+            this.Actions.PressSave();
+
+        }
+
+        public void InsertAuditDetails(CDVendorLocationDetail vendorDetail, CDVendorMergeFilter filter, ParameterList parameterList)
+        {
+            var vendorTo = Vendor.PK.Find(this, filter.VendorID);
+
+            CDMergeVendorsAuditTrn mergeVendorsAudittrn = new CDMergeVendorsAuditTrn();
+            mergeVendorsAudittrn.AffectedEntity = parameterList.AffectedEntity;
+            mergeVendorsAudittrn.DocType = parameterList.DocType;
+            mergeVendorsAudittrn.RefNumber = parameterList.RefNumber;
+            mergeVendorsAudittrn.OriginalVendor = vendorDetail.AcctCD;
+            mergeVendorsAudittrn.MergeVendorTo = vendorTo.AcctCD;
+            mergeVendorsAudittrn.BatchID = Guid.NewGuid();
+
+            this.auditTrnView.Cache.Update(mergeVendorsAudittrn);
+            this.Actions.PressSave();
+
+        }
+
+        public struct ParameterList
+        {
+            public string AffectedEntity { get; set; }
+            public string DocType { get; set; }
+            public string RefNumber { get; set; }
         }
 
         #endregion

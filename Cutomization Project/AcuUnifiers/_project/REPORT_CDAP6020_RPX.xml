@@ -1,0 +1,250 @@
+﻿<Report Name="cdap6020.rpx">
+    <Report version="20211215" Name="report1">
+        <SchemaUrl>http://localhost/SEFORUM-24R1</SchemaUrl>
+        <Sorting>
+            <SortExp>
+                <DataField>CDMergeVendorsAudit.TrnDate</DataField>
+                <SortOrder>Descending</SortOrder>
+            </SortExp>
+        </Sorting>
+        <Tables>
+            <ReportTable Name="CDMergeVendorsAudit">
+                <Fields>
+                    <ReportField Name="BatchID">
+                        <DataType>Object</DataType>
+                    </ReportField>
+                    <ReportField Name="MergeVendorFrom">
+                    </ReportField>
+                    <ReportField Name="MergeVendorLocationFrom">
+                    </ReportField>
+                    <ReportField Name="MergeVendorLocationFrom_description">
+                    </ReportField>
+                    <ReportField Name="MergeVendorLocationFrom_Location_locationCD">
+                    </ReportField>
+                    <ReportField Name="MergeVendorLocationFrom_Segment1">
+                    </ReportField>
+                    <ReportField Name="MergeVendorLocationTo">
+                    </ReportField>
+                    <ReportField Name="MergeVendorLocationTo_description">
+                    </ReportField>
+                    <ReportField Name="MergeVendorLocationTo_Location_locationCD">
+                    </ReportField>
+                    <ReportField Name="MergeVendorLocationTo_Segment1">
+                    </ReportField>
+                    <ReportField Name="MergeVendorTo">
+                    </ReportField>
+                    <ReportField Name="NoteActivity">
+                    </ReportField>
+                    <ReportField Name="NoteFiles">
+                    </ReportField>
+                    <ReportField Name="NoteID">
+                        <DataType>Object</DataType>
+                    </ReportField>
+                    <ReportField Name="NoteImages">
+                    </ReportField>
+                    <ReportField Name="NoteText">
+                    </ReportField>
+                    <ReportField Name="TrnDate">
+                        <DataType>DateTime</DataType>
+                    </ReportField>
+                    <ReportField Name="TrnDate_Day">
+                    </ReportField>
+                    <ReportField Name="TrnDate_Hour">
+                    </ReportField>
+                    <ReportField Name="TrnDate_Month">
+                    </ReportField>
+                    <ReportField Name="TrnDate_Quarter">
+                    </ReportField>
+                    <ReportField Name="TrnUser">
+                    </ReportField>
+                    <ReportField Name="Type">
+                    </ReportField>
+                </Fields>
+                <FullName>AcuUnifiers.CDMergeVendorsAudit</FullName>
+            </ReportTable>
+        </Tables>
+        <Version>20211215</Version>
+        <Sections>
+            <PageHeader Name="pageHeaderSection1">
+                <Height>4.02116cm</Height>
+                <Items>
+                    <Line Name="line1">
+                        <Location>8px, 144px</Location>
+                        <Size>672px, 8px</Size>
+                    </Line>
+                    <TextBox Name="textBox10">
+                        <Location>384px, 104px</Location>
+                        <Size>120px, 36px</Size>
+                        <Style>
+                            <Font>
+                                <Name>Arial Black</Name>
+                                <Size>12px</Size>
+                            </Font>
+                        </Style>
+                        <Value>Merge To Vendor Location</Value>
+                    </TextBox>
+                    <TextBox Name="textBox11">
+                        <Location>512px, 104px</Location>
+                        <Size>136px, 36px</Size>
+                        <Style>
+                            <Font>
+                                <Name>Arial Black</Name>
+                                <Size>12px</Size>
+                            </Font>
+                        </Style>
+                        <Value>Vendor Locations Merged</Value>
+                    </TextBox>
+                    <TextBox Name="textBox12">
+                        <Location>200px, 102px</Location>
+                        <Size>48px, 36px</Size>
+                        <Style>
+                            <Font>
+                                <Name>Arial Black</Name>
+                                <Size>12px</Size>
+                            </Font>
+                        </Style>
+                        <Value>Type</Value>
+                    </TextBox>
+                    <TextBox Name="textBox3">
+                        <Location>0px, 48px</Location>
+                        <Size>696px, 48px</Size>
+                        <Style>
+                            <Font>
+                                <Name>Arial Black</Name>
+                                <Size>25px</Size>
+                            </Font>
+                        </Style>
+                        <Value>                   Vendor Merge Audit Report</Value>
+                    </TextBox>
+                    <TextBox Name="textBox7">
+                        <Location>8px, 102px</Location>
+                        <Size>88px, 36px</Size>
+                        <Style>
+                            <Font>
+                                <Name>Arial Black</Name>
+                                <Size>12px</Size>
+                            </Font>
+                        </Style>
+                        <Value>User</Value>
+                    </TextBox>
+                    <TextBox Name="textBox8">
+                        <Location>96px, 102px</Location>
+                        <Size>96px, 36px</Size>
+                        <Style>
+                            <Font>
+                                <Name>Arial Black</Name>
+                                <Size>12px</Size>
+                            </Font>
+                        </Style>
+                        <Value>Processed Date Time</Value>
+                    </TextBox>
+                    <TextBox Name="textBox9">
+                        <Location>256px, 103px</Location>
+                        <Size>104px, 36px</Size>
+                        <Style>
+                            <Font>
+                                <Name>Arial Black</Name>
+                                <Size>12px</Size>
+                            </Font>
+                        </Style>
+                        <Value>Merge To Vendor</Value>
+                    </TextBox>
+                </Items>
+            </PageHeader>
+            <Detail Name="detailSection1">
+                <Height>0.84656cm</Height>
+                <Items>
+                    <TextBox Name="textBox6">
+                        <Location>512px, 5px</Location>
+                        <Size>168px, 24px</Size>
+                        <Style>
+                            <Font>
+                                <Size>12px</Size>
+                            </Font>
+                        </Style>
+                        <Value>=Concat([CDMergeVendorsAudit.MergeVendorFrom],' - ',[CDMergeVendorsAudit.MergeVendorLocationFrom_Location_locationCD])</Value>
+                    </TextBox>
+                </Items>
+            </Detail>
+            <PageFooter Name="pageFooterSection1">
+                <Height>1.26984cm</Height>
+            </PageFooter>
+        </Sections>
+        <Items>
+        </Items>
+        <Groups>
+            <Group Name="NewGroup">
+                <Grouping>
+                    <GroupExp>
+                        <DataField>=[CDMergeVendorsAudit.BatchID]</DataField>
+                    </GroupExp>
+                </Grouping>
+                <Headers>
+                    <Header Name="groupHeaderSection2">
+                        <Height>0.84656cm</Height>
+                        <Style>
+                            <BackColor>LightSteelBlue</BackColor>
+                        </Style>
+                        <Items>
+                            <TextBox Name="textBox1">
+                                <Location>8px, 8px</Location>
+                                <Size>88px, 16px</Size>
+                                <Style>
+                                    <Font>
+                                        <Size>12px</Size>
+                                    </Font>
+                                </Style>
+                                <Value>=[CDMergeVendorsAudit.TrnUser]</Value>
+                            </TextBox>
+                            <TextBox Name="textBox13">
+                                <Location>196px, 8px</Location>
+                                <Size>60px, 16px</Size>
+                                <Style>
+                                    <Font>
+                                        <Size>12px</Size>
+                                    </Font>
+                                </Style>
+                                <Value>=[CDMergeVendorsAudit.Type]</Value>
+                            </TextBox>
+                            <TextBox Name="textBox2">
+                                <Location>96px, 8px</Location>
+                                <Size>96px, 16px</Size>
+                                <Style>
+                                    <Font>
+                                        <Size>12px</Size>
+                                    </Font>
+                                </Style>
+                                <Value>=[CDMergeVendorsAudit.TrnDate]</Value>
+                            </TextBox>
+                            <TextBox Name="textBox4">
+                                <Location>384px, 8px</Location>
+                                <Size>120px, 16px</Size>
+                                <Style>
+                                    <Font>
+                                        <Size>12px</Size>
+                                    </Font>
+                                </Style>
+                                <Value>=[CDMergeVendorsAudit.MergeVendorLocationTo_Location_locationCD]</Value>
+                            </TextBox>
+                            <TextBox Name="textBox5">
+                                <Location>256px, 8px</Location>
+                                <Size>120px, 16px</Size>
+                                <Style>
+                                    <Font>
+                                        <Size>12px</Size>
+                                    </Font>
+                                </Style>
+                                <Value>=[CDMergeVendorsAudit.MergeVendorTo]</Value>
+                            </TextBox>
+                        </Items>
+                    </Header>
+                </Headers>
+                <Footers>
+                    <Footer Name="groupFooterSection2">
+                        <Height>1.0582cm</Height>
+                    </Footer>
+                </Footers>
+            </Group>
+        </Groups>
+    </Report>
+</Report>

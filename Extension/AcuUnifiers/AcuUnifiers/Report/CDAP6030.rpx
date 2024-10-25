@@ -1,0 +1,135 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report version="20211215" Name="report1">
+  <SchemaUrl>http://localhost/SEFORUM-24R1</SchemaUrl>
+  <Tables>
+    <ReportTable Name="CDMergeVendorsAuditTrn">
+      <Fields>
+        <ReportField Name="AffectedEntity"></ReportField>
+        <ReportField Name="BatchID">
+          <DataType>Object</DataType>
+        </ReportField>
+        <ReportField Name="DocType"></ReportField>
+        <ReportField Name="MergeVendorTo"></ReportField>
+        <ReportField Name="NoteActivity"></ReportField>
+        <ReportField Name="NoteFiles"></ReportField>
+        <ReportField Name="NoteID">
+          <DataType>Object</DataType>
+        </ReportField>
+        <ReportField Name="NoteImages"></ReportField>
+        <ReportField Name="NoteText"></ReportField>
+        <ReportField Name="OriginalVendor"></ReportField>
+        <ReportField Name="RefNumber"></ReportField>
+      </Fields>
+      <FullName>AcuUnifiers.CDMergeVendorsAuditTrn</FullName>
+    </ReportTable>
+  </Tables>
+  <Version>20211215</Version>
+  <Sections>
+    <PageHeader Name="pageHeaderSection1">
+      <Height>2.96296cm</Height>
+      <Items>
+        <Line Name="line1">
+          <Location>0px, 104px</Location>
+          <Size>696px, 8px</Size>
+        </Line>
+        <TextBox Name="textBox1">
+          <Location>80px, 16px</Location>
+          <Size>544px, 40px</Size>
+          <Style>
+            <Font>
+              <Name>Arial Black</Name>
+              <Size>25px</Size>
+            </Font>
+          </Style>
+          <Value>Vendor Merge - Detailed Audit Report</Value>
+        </TextBox>
+        <TextBox Name="textBox2">
+          <Location>8px, 88px</Location>
+          <Size>120px, 16px</Size>
+          <Style>
+            <Font>
+              <Name>Arial Black</Name>
+              <Size>12px</Size>
+            </Font>
+          </Style>
+          <Value>Affected Entity</Value>
+        </TextBox>
+        <TextBox Name="textBox3">
+          <Location>136px, 88px</Location>
+          <Size>120px, 16px</Size>
+          <Style>
+            <Font>
+              <Name>Arial Black</Name>
+              <Size>12px</Size>
+            </Font>
+          </Style>
+          <Value>Doc Type</Value>
+        </TextBox>
+        <TextBox Name="textBox4">
+          <Location>264px, 88px</Location>
+          <Size>120px, 16px</Size>
+          <Style>
+            <Font>
+              <Name>Arial Black</Name>
+              <Size>12px</Size>
+            </Font>
+          </Style>
+          <Value>Ref Number</Value>
+        </TextBox>
+        <TextBox Name="textBox5">
+          <Location>392px, 88px</Location>
+          <Size>120px, 16px</Size>
+          <Style>
+            <Font>
+              <Name>Arial Black</Name>
+              <Size>12px</Size>
+            </Font>
+          </Style>
+          <Value>Original Vendor</Value>
+        </TextBox>
+        <TextBox Name="textBox6">
+          <Location>528px, 88px</Location>
+          <Size>144px, 16px</Size>
+          <Style>
+            <Font>
+              <Name>Arial Black</Name>
+              <Size>12px</Size>
+            </Font>
+          </Style>
+          <Value>Merged To Vendor</Value>
+        </TextBox>
+      </Items>
+    </PageHeader>
+    <Detail Name="detailSection1">
+      <Height>0.84656cm</Height>
+      <Items>
+        <TextBox Name="textBox10">
+          <Location>392px, 0px</Location>
+          <Size>120px, 16px</Size>
+          <Value>=[CDMergeVendorsAuditTrn.OriginalVendor]</Value>
+        </TextBox>
+        <TextBox Name="textBox11">
+          <Location>528px, 0px</Location>
+          <Size>144px, 16px</Size>
+          <Value>=[CDMergeVendorsAuditTrn.MergeVendorTo]</Value>
+        </TextBox>
+        <TextBox Name="textBox7">
+          <Location>8px, 0px</Location>
+          <Size>120px, 16px</Size>
+          <Value>=[CDMergeVendorsAuditTrn.AffectedEntity]</Value>
+        </TextBox>
+        <TextBox Name="textBox8">
+          <Location>136px, 0px</Location>
+          <Size>120px, 16px</Size>
+          <Value>=[CDMergeVendorsAuditTrn.DocType]</Value>
+        </TextBox>
+        <TextBox Name="textBox9">
+          <Location>264px, 0px</Location>
+          <Size>120px, 16px</Size>
+          <Value>=[CDMergeVendorsAuditTrn.RefNumber]</Value>
+        </TextBox>
+      </Items>
+    </Detail>
+    <PageFooter Name="pageFooterSection1"></PageFooter>
+  </Sections>
+</Report>
