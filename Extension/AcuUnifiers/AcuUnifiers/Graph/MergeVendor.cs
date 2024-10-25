@@ -11,6 +11,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace AcuUnifiers
 {
@@ -71,6 +72,8 @@ namespace AcuUnifiers
         protected void _(Events.RowSelected<CDVendorMergeFilter> e)
         {
             CDVendorMergeFilter filter = e.Row;
+
+            PXUIFieldAttribute.SetVisible<CDVendorMergeFilter.mergingDate>(e.Cache, filter, filter.MergingOption != Constants.MergingOptionValueAllTransactions);
 
             VendorsToBeMerged.SetProcessDelegate(delegate (List<CDVendorLocationDetail> list)
             {
@@ -201,7 +204,7 @@ namespace AcuUnifiers
                         }
                     }
                 }
-                else
+                else if(filter.MergingOption == Constants.MergingOptionValueOpenPurchaseOrders)
                 {
                     foreach (CDVendorLocationDetail vendorDetail in list)
                     {
@@ -218,7 +221,25 @@ namespace AcuUnifiers
 
                         using (var tx = new PXTransactionScope())
                         {
+                            var poOrders = SelectFrom<POOrder>
+                                            .Where<POOrder.vendorID.IsEqual<@P.AsInt>
+                                            .And<POOrder.vendorLocationID.IsEqual<@P.AsInt>
+                                            .And<POOrder.orderDate.IsGreaterEqual<@P.AsDateTime>
+                                            .And<Brackets<Where<POOrder.status.IsEqual<POOrderStatus.hold>
+                                                .Or<POOrder.status.IsEqual<POOrderStatus.pendingApproval>
+                                                .Or<POOrder.status.IsEqual<POOrderStatus.open>>>>>>>>>.View.Select(this, vendorDetail.BAccountID, vendorDetail.VendorLocationID, filter.MergingDate);
 
+                            foreach (POOrder poOrder in poOrders)
+                            {
+                                var receiptLines = SelectFrom<POReceiptLine>
+                                    .Where<POReceiptLine.pOType.IsEqual<@P.AsString>
+                                        .And<POReceiptLine.pONbr.IsEqual<@P.AsString>>>.View.Select(this, poOrder.OrderType, poOrder.OrderNbr);
+
+                                if(receiptLines.Count == 0)
+                                    UpdatePOOrders(poOrder, poOrderEntry, filter);
+                            }
+
+                            tx.Complete();
                         }
                     }
                 }
